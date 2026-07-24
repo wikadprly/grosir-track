@@ -1,0 +1,48 @@
+{
+  "name": "buku-bon",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "next": "^16.2.6",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "next-auth": "^4.24.7",
+    "@prisma/client": "^7.8.0",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@auth/prisma-adapter": "^2.11.2",
+    "pg": "^8.20.0",
+    "axios": "^1.15.0",
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^4.3.6",
+    "lucide-react": "^1.14.0",
+    "recharts": "^3.8.1",
+    "pdfjs-dist": "^5.7.284",
+    "react-pdf": "^10.4.1",
+    "xlsx": "^0.18.5",
+    "uuid": "^14.0.0",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "prisma": "^7.8.0",
+    "tailwindcss": "^4",
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.4",
+    "tsx": "^4.21.0",
+    "ts-node": "^10.9.2",
+    "@types/node": "^20.19.39",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/pg": "^8.20.0",
+    "@types/uuid": "^10.0.0"
+  }
+}
