@@ -1,25 +1,43 @@
-import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import BottomNav from "@/components/BottomNav";
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Buku Bon Ibu",
-  description: "Aplikasi Buku Bon Digital",
+  description: "Aplikasi pencatatan hutang pelanggan khusus untuk Ibu.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Buku Bon",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#d9534f",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="id" className={`${geistSans.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="id">
+      <body className="bg-gray-200 text-gray-900 antialiased">
+        <ServiceWorkerRegistration />
+        <div className="max-w-md mx-auto min-h-screen bg-[#faf9f7] relative shadow-2xl overflow-x-hidden">
+          <main className="pb-28 min-h-screen">
+            {children}
+          </main>
+          <BottomNav />
+        </div>
+      </body>
     </html>
   );
 }

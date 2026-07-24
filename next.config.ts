@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {},
   },
+  turbopack: {},
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
