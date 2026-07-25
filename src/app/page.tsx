@@ -1,7 +1,14 @@
 import { ReceiptText, ArrowDownToLine, Wallet, UserCircle2 } from "lucide-react";
 import Link from "next/link";
+import { getDashboardData } from "./actions";
 
-export default function Beranda() {
+const formatRupiah = (angka: number) => {
+  return "Rp " + angka.toLocaleString("id-ID");
+};
+
+export default async function Beranda() {
+  const data = await getDashboardData();
+
   return (
     <main className="min-h-screen">
       {/* Header */}
@@ -23,7 +30,7 @@ export default function Beranda() {
                 <div className="p-3 bg-blue-50 rounded-xl text-blue-500"><ReceiptText size={24} /></div>
                 <span className="text-base font-medium text-gray-700">Transaksi Hari Ini</span>
               </div>
-              <span className="font-bold text-gray-900 text-2xl">5</span>
+              <span className="font-bold text-gray-900 text-2xl">{data.transaksiHariIni}</span>
             </div>
             
             <div className="flex justify-between items-center py-1">
@@ -31,7 +38,7 @@ export default function Beranda() {
                 <div className="p-3 bg-green-50 rounded-xl text-green-500"><ArrowDownToLine size={24} /></div>
                 <span className="text-base font-medium text-gray-700">Uang Masuk</span>
               </div>
-              <span className="font-bold text-gray-900 text-xl">Rp 2.500.000</span>
+              <span className="font-bold text-gray-900 text-xl">{formatRupiah(data.uangMasuk)}</span>
             </div>
             
             <div className="flex justify-between items-center py-1">
@@ -39,7 +46,7 @@ export default function Beranda() {
                 <div className="p-3 bg-red-50 rounded-xl text-red-500"><Wallet size={24} /></div>
                 <span className="text-base font-medium text-gray-700">Total Piutang</span>
               </div>
-              <span className="font-bold text-[#d9534f] text-xl">Rp 18.250.000</span>
+              <span className="font-bold text-[#d9534f] text-xl">{formatRupiah(data.totalPiutang)}</span>
             </div>
 
           </div>
@@ -55,14 +62,10 @@ export default function Beranda() {
           </div>
           
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-50">
-            {[
-              { name: "Bu Ito", amount: "Rp 1.697.500", hutang: true },
-              { name: "Pak Agus", amount: "Rp 2.400.000", hutang: true },
-              { name: "Bu Mar", amount: "Rp 520.000", hutang: false },
-            ].map((item, idx) => (
+            {data.pelangganTerakhir.map((item) => (
               <Link
-                key={idx}
-                href="/pelanggan"
+                key={item.id}
+                href={`/pelanggan/${item.id}`}
                 className="flex justify-between items-center p-4 active:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-4">
@@ -72,7 +75,7 @@ export default function Beranda() {
                   <span className="text-base font-semibold text-gray-800">{item.name}</span>
                 </div>
                 <span className={`text-base font-bold ${item.hutang ? "text-[#d9534f]" : "text-gray-900"}`}>
-                  {item.amount}
+                  {item.hutang ? formatRupiah(item.saldo) : "LUNAS"}
                 </span>
               </Link>
             ))}

@@ -1,33 +1,25 @@
 import { Search, Plus, ChevronRight } from "lucide-react";
 import Link from "next/link";
-
-// --- DUMMY DATA ---
-const daftarPelanggan = [
-  { id: "1", nama: "Bu Ito", saldo: 1697500, status: "hutang" },
-  { id: "2", nama: "Pak Agus", saldo: 2400000, status: "hutang" },
-  { id: "3", nama: "Bu Mar", saldo: 520000, status: "hutang" },
-  { id: "4", nama: "Pak Joko", saldo: 1200000, status: "hutang" },
-  { id: "5", nama: "Bu Siti", saldo: 950000, status: "hutang" },
-  { id: "6", nama: "Pak Dar", saldo: 0, status: "lunas" },
-  { id: "7", nama: "Bu Rina", saldo: 780000, status: "hutang" },
-  { id: "8", nama: "Bu Yanti", saldo: 0, status: "lunas" },
-  { id: "9", nama: "Pak Dedi", saldo: 650000, status: "hutang" },
-  { id: "10", nama: "Bu Lilis", saldo: 0, status: "lunas" },
-];
+import { getCustomers } from "./actions";
 
 const formatRupiah = (angka: number) => {
   return new Intl.NumberFormat("id-ID").format(angka);
 };
 
-export default function PelangganPage() {
+export default async function PelangganPage() {
+  const daftarPelanggan = await getCustomers();
+
   return (
     <main className="min-h-screen bg-[#faf9f7] pb-24">
       {/* HEADER */}
       <div className="flex justify-between items-center px-5 pt-8 pb-5">
         <h1 className="text-3xl font-bold text-gray-900">Pelanggan</h1>
-        <button className="bg-[#e65c5c] text-white p-2.5 rounded-full shadow-sm hover:bg-red-600 active:scale-95 transition-all">
+        <Link
+          href="/pelanggan/tambah"
+          className="bg-[#e65c5c] text-white p-2.5 rounded-full shadow-sm hover:bg-red-600 active:scale-95 transition-all"
+        >
           <Plus size={24} strokeWidth={3} />
-        </button>
+        </Link>
       </div>
 
       {/* SEARCH BAR */}

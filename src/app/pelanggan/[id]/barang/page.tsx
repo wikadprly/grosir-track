@@ -1,20 +1,14 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { getProducts } from "./actions";
+import CatatBarangClient from "./CatatBarangClient";
 
-export default function BarangPelangganPage() {
+export default async function CatatBarangPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const products = await getProducts();
+
   return (
-    <main className="min-h-screen">
-      <div className="bg-white p-5 pb-4 rounded-b-3xl shadow-sm mb-6 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <Link href="/pelanggan" className="p-2 -ml-2 active:bg-gray-100 rounded-xl transition-colors">
-            <ArrowLeft size={24} className="text-gray-600" />
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-800">Barang Pelanggan</h1>
-        </div>
-      </div>
-      <div className="px-5">
-        <p className="text-base text-gray-400 text-center mt-10">Fitur ini segera hadir.</p>
-      </div>
-    </main>
+    <CatatBarangClient
+      pelangganId={id}
+      products={products}
+    />
   );
 }

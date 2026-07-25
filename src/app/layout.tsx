@@ -18,8 +18,8 @@ export const viewport: Viewport = {
   themeColor: "#d9534f",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({
@@ -31,7 +31,7 @@ export default function RootLayout({
     <html lang="id">
       <body className="bg-gray-200 text-gray-900 antialiased">
         <ServiceWorkerRegistration />
-        <div className="max-w-md mx-auto min-h-screen bg-[#faf9f7] relative shadow-2xl overflow-x-hidden">
+        <div className="w-full max-w-lg mx-auto min-h-screen bg-[#faf9f7] relative shadow-2xl overflow-x-hidden">
           <main className="pb-28 min-h-screen">
             {children}
           </main>
