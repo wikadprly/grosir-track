@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Search, Trash2, Plus, Minus, Pencil, Check, X } from "lucide-react";
+import { ArrowLeft, Search, Trash2, Plus, Minus, Pencil, Check, X, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createTransaction } from "./actions";
 
 const formatAngka = (angka: number) => {
   return new Intl.NumberFormat("id-ID").format(angka);
@@ -16,6 +18,7 @@ interface Product {
 
 interface SelectedItem extends Product {
   qty: number;
+  hargaDefault: number;
 }
 
 interface Props {
@@ -24,11 +27,16 @@ interface Props {
 }
 
 export default function CatatBarangClient({ pelangganId, products }: Props) {
-  const [tanggal, setTanggal] = useState("2025-07-22");
+  const router = useRouter();
+  const [tanggal, setTanggal] = useState(() => {
+    const now = new Date();
+    return now.toLocaleDateString("sv-SE");
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [editingPriceValue, setEditingPriceValue] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const hasilPencarian = searchQuery
     ? products.filter((item) =>
@@ -45,7 +53,7 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
         )
       );
     } else {
-      setSelectedItems([...selectedItems, { ...barang, qty: 1 }]);
+      setSelectedItems([...selectedItems, { ...barang, qty: 1, hargaDefault: barang.harga }]);
     }
     setSearchQuery("");
   };
@@ -87,6 +95,28 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
   const batalEditHarga = () => {
     setEditingPriceId(null);
     setEditingPriceValue("");
+  };
+
+  const handleSimpan = async () => {
+    if (selectedItems.length === 0 || saving) return;
+    setSaving(true);
+    try {
+      await createTransaction(
+        pelangganId,
+        tanggal,
+        selectedItems.map((item) => ({
+          productId: item.id,
+          qty: item.qty,
+          harga: item.harga,
+        }))
+      );
+      router.push(`/pelanggan/${pelangganId}`);
+    } catch (error) {
+      console.error("Gagal menyimpan:", error);
+      alert("Gagal menyimpan catatan. Coba lagi.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const subtotal = selectedItems.reduce(
@@ -158,63 +188,74 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
         {/* DAFTAR BARANG YANG SUDAH DIPILIH */}
         {selectedItems.length > 0 && (
           <div className="mt-8 border-t border-gray-200 pt-5 space-y-4">
-            {selectedItems.map((item) => (
-              <div key={item.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="text-[16px] font-bold text-gray-900">{item.nama}</h3>
+            {selectedItems.map((item) => {
+              const hargaBeda = item.harga !== item.hargaDefault;
+              return (
+                <div key={item.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="text-[16px] font-bold text-gray-900">{item.nama}</h3>
 
-                    {editingPriceId === item.id ? (
-                      <div className="flex items-center gap-2 mt-1">
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          value={editingPriceValue}
-                          onChange={(e) => setEditingPriceValue(e.target.value.replace(/\D/g, ""))}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") simpanEditHarga(item.id);
-                            if (e.key === "Escape") batalEditHarga();
-                          }}
-                          autoFocus
-                          className="w-36 px-3 py-1.5 border-2 border-[#e65c5c] rounded-xl text-[15px] font-bold text-[#e65c5c] focus:outline-none"
-                        />
-                        <button onClick={() => simpanEditHarga(item.id)} className="p-1.5 bg-green-50 rounded-lg text-green-600 active:scale-95">
-                          <Check size={16} strokeWidth={3} />
-                        </button>
-                        <button onClick={batalEditHarga} className="p-1.5 bg-gray-100 rounded-lg text-gray-500 active:scale-95">
-                          <X size={16} strokeWidth={3} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-[15px] font-bold text-[#e65c5c]">Rp {formatAngka(item.harga)}</p>
-                        <button
-                          onClick={() => mulaiEditHarga(item.id, item.harga)}
-                          className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                      </div>
-                    )}
+                      {editingPriceId === item.id ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={editingPriceValue}
+                            onChange={(e) => setEditingPriceValue(e.target.value.replace(/\D/g, ""))}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") simpanEditHarga(item.id);
+                              if (e.key === "Escape") batalEditHarga();
+                            }}
+                            autoFocus
+                            className="w-36 px-3 py-1.5 border-2 border-[#e65c5c] rounded-xl text-[15px] font-bold text-[#e65c5c] focus:outline-none"
+                          />
+                          <button onClick={() => simpanEditHarga(item.id)} className="p-1.5 bg-green-50 rounded-lg text-green-600 active:scale-95">
+                            <Check size={16} strokeWidth={3} />
+                          </button>
+                          <button onClick={batalEditHarga} className="p-1.5 bg-gray-100 rounded-lg text-gray-500 active:scale-95">
+                            <X size={16} strokeWidth={3} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-[15px] font-bold text-[#e65c5c]">Rp {formatAngka(item.harga)}</p>
+                          <button
+                            onClick={() => mulaiEditHarga(item.id, item.harga)}
+                            className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          {hargaBeda && (
+                            <span className="text-[11px] font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                              Harga custom
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {hargaBeda && editingPriceId !== item.id && (
+                        <p className="text-[12px] text-gray-400 mt-0.5">Harga awal: Rp {formatAngka(item.hargaDefault)}</p>
+                      )}
+                    </div>
+
+                    <button onClick={() => hapusBarang(item.id)} className="p-2 text-red-400 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">
+                      <Trash2 size={20} />
+                    </button>
                   </div>
 
-                  <button onClick={() => hapusBarang(item.id)} className="p-2 text-red-400 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">
-                    <Trash2 size={20} />
-                  </button>
+                  <div className="flex items-center gap-4 bg-gray-50 w-max rounded-xl p-1 border border-gray-200">
+                    <span className="text-sm font-semibold text-gray-600 pl-3 pr-2">Qty</span>
+                    <button onClick={() => ubahQty(item.id, -1)} className="p-1.5 bg-white rounded-lg shadow-sm active:scale-95">
+                      <Minus size={16} className="text-gray-600" />
+                    </button>
+                    <span className="w-6 text-center font-bold text-[15px] text-gray-900">{item.qty}</span>
+                    <button onClick={() => ubahQty(item.id, 1)} className="p-1.5 bg-white rounded-lg shadow-sm active:scale-95">
+                      <Plus size={16} className="text-gray-600" />
+                    </button>
+                  </div>
                 </div>
-
-                <div className="flex items-center gap-4 bg-gray-50 w-max rounded-xl p-1 border border-gray-200">
-                  <span className="text-sm font-semibold text-gray-600 pl-3 pr-2">Qty</span>
-                  <button onClick={() => ubahQty(item.id, -1)} className="p-1.5 bg-white rounded-lg shadow-sm active:scale-95">
-                    <Minus size={16} className="text-gray-600" />
-                  </button>
-                  <span className="w-6 text-center font-bold text-[15px] text-gray-900">{item.qty}</span>
-                  <button onClick={() => ubahQty(item.id, 1)} className="p-1.5 bg-white rounded-lg shadow-sm active:scale-95">
-                    <Plus size={16} className="text-gray-600" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -226,14 +267,22 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
           <span className="text-xl font-bold text-[#e65c5c]">Rp {formatAngka(subtotal)}</span>
         </div>
         <button
-          disabled={selectedItems.length === 0}
-          className={`w-full font-bold py-4 rounded-2xl transition-all text-[17px] tracking-wide ${
-            selectedItems.length > 0
+          onClick={handleSimpan}
+          disabled={selectedItems.length === 0 || saving}
+          className={`w-full font-bold py-4 rounded-2xl transition-all text-[17px] tracking-wide flex items-center justify-center gap-2 ${
+            selectedItems.length > 0 && !saving
               ? "bg-[#e65c5c] text-white shadow-[0_8px_20px_rgba(230,92,92,0.3)] hover:bg-red-600 active:scale-[0.98]"
               : "bg-gray-200 text-gray-400 cursor-not-allowed"
           }`}
         >
-          Simpan Catatan
+          {saving ? (
+            <>
+              <Loader2 size={20} className="animate-spin" />
+              Menyimpan...
+            </>
+          ) : (
+            "Simpan Catatan"
+          )}
         </button>
       </div>
     </main>

@@ -31,7 +31,7 @@ export default function RootLayout({
     <html lang="id">
       <body className="bg-gray-200 text-gray-900 antialiased">
         <ServiceWorkerRegistration />
-        <div className="w-full max-w-lg mx-auto min-h-screen bg-[#faf9f7] relative shadow-2xl overflow-x-hidden">
+        <div className="w-full max-w-lg mx-auto min-h-screen bg-[#faf9f7] relative shadow-2xl overflow-clip">
           <main className="pb-28 min-h-screen">
             {children}
           </main>

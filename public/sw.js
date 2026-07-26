@@ -1,6 +1,5 @@
 const CACHE_NAME = "buku-bon-v1";
 const STATIC_ASSETS = [
-  "/",
   "/icon.svg",
   "/manifest.json",
 ];
@@ -41,6 +40,23 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Network-first for navigation requests (HTML pages)
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for static assets (CSS, JS, images)
   event.respondWith(
     caches.match(request).then((cached) => {
       const fetched = fetch(request).then((response) => {

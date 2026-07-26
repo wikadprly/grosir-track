@@ -1,17 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { createPayment } from "./actions";
 
 interface Props {
   pelangganId: string;
 }
 
 export default function CatatNitipClient({ pelangganId }: Props) {
-  const [tanggal, setTanggal] = useState("2025-07-22");
+  const router = useRouter();
+  const [tanggal, setTanggal] = useState(() => {
+    const now = new Date();
+    return now.toLocaleDateString("sv-SE");
+  });
   const [nominal, setNominal] = useState("");
   const [catatan, setCatatan] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const handleNominalChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "");
@@ -23,6 +30,21 @@ export default function CatatNitipClient({ pelangganId }: Props) {
 
     const formatted = new Intl.NumberFormat("id-ID").format(parseInt(value, 10));
     setNominal(formatted);
+  };
+
+  const handleSimpan = async () => {
+    if (!nominal || nominal === "0" || saving) return;
+    setSaving(true);
+    try {
+      const amount = parseInt(nominal.replace(/\D/g, ""), 10);
+      await createPayment(pelangganId, amount, tanggal, catatan || undefined);
+      router.push(`/pelanggan/${pelangganId}`);
+    } catch (error) {
+      console.error("Gagal menyimpan:", error);
+      alert("Gagal menyimpan catatan. Coba lagi.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -78,14 +100,22 @@ export default function CatatNitipClient({ pelangganId }: Props) {
       {/* FOOTER: TOMBOL SIMPAN */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5 pt-4 pb-6 max-w-md mx-auto shadow-[0_-10px_20px_rgba(0,0,0,0.03)] z-10">
         <button
-          disabled={!nominal || nominal === "0"}
-          className={`w-full font-bold py-4 rounded-2xl transition-all text-[17px] tracking-wide ${
-            nominal && nominal !== "0"
+          onClick={handleSimpan}
+          disabled={!nominal || nominal === "0" || saving}
+          className={`w-full font-bold py-4 rounded-2xl transition-all text-[17px] tracking-wide flex items-center justify-center gap-2 ${
+            nominal && nominal !== "0" && !saving
               ? "bg-[#e65c5c] text-white shadow-[0_8px_20px_rgba(230,92,92,0.3)] hover:bg-red-600 active:scale-[0.98]"
               : "bg-gray-200 text-gray-400 cursor-not-allowed"
           }`}
         >
-          Simpan Catatan
+          {saving ? (
+            <>
+              <Loader2 size={20} className="animate-spin" />
+              Menyimpan...
+            </>
+          ) : (
+            "Simpan Catatan"
+          )}
         </button>
       </div>
     </main>

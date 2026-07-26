@@ -12,27 +12,23 @@ export async function getCustomerDetail(id: string) {
             include: { product: { select: { name: true } } },
           },
         },
-        orderBy: { date: "desc" },
       },
-      payments: {
-        orderBy: { date: "desc" },
-      },
+      payments: {},
     },
   });
 
   if (!customer) return null;
 
-  // Gabungkan transaksi dan pembayaran, urutkan berdasarkan tanggal
-  type RiwayatItem =
-    | { jenis: "barang"; id: string; tanggal: Date; items: { nama: string; harga: number }[]; total: number }
-    | { jenis: "nitip"; id: string; tanggal: Date; nominal: number };
+  // Gabungkan semua transaksi dan pembayaran
+  type Entry =
+    | { jenis: "barang"; tanggal: Date; items: { nama: string; harga: number }[]; total: number }
+    | { jenis: "nitip"; tanggal: Date; nominal: number };
 
-  const riwayat: RiwayatItem[] = [];
+  const allEntries: Entry[] = [];
 
   for (const t of customer.transactions) {
-    riwayat.push({
+    allEntries.push({
       jenis: "barang",
-      id: t.id,
       tanggal: t.date,
       items: t.details.map((d) => ({
         nama: d.product.name,
@@ -43,25 +39,91 @@ export async function getCustomerDetail(id: string) {
   }
 
   for (const p of customer.payments) {
-    riwayat.push({
+    allEntries.push({
       jenis: "nitip",
-      id: p.id,
       tanggal: p.date,
       nominal: p.amount,
     });
   }
 
-  // Urutkan dari yang terbaru
-  riwayat.sort((a, b) => b.tanggal.getTime() - a.tanggal.getTime());
+  // Sort dari yang PALING LAMA (terbaru di bawah)
+  allEntries.sort((a, b) => a.tanggal.getTime() - b.tanggal.getTime());
 
   // Hitung sisa hutang
   const totalTransaksi = customer.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
   const totalPembayaran = customer.payments.reduce((sum, p) => sum + p.amount, 0);
   const sisaHutang = totalTransaksi - totalPembayaran;
 
+  // Group by tanggal, tapi tiap entry punya sisa masing-masing
+  const dateKey = (d: Date) => d.toISOString().split("T")[0];
+
+  interface FlatEntry {
+    id: number;
+    jenis: "barang" | "nitip";
+    items?: { nama: string; harga: number }[];
+    total?: number;
+    nominal?: number;
+    sisa: number;
+  }
+
+  interface HariGroup {
+    tanggal: string;
+    tanggalDisplay: string;
+    entries: FlatEntry[];
+  }
+
+  const grouped: HariGroup[] = [];
+  let idx = 0;
+  let runningBalance = 0;
+
+  // Group entries by date, tapi tetap urut chronologis dalam 1 hari
+  const groupedEntries = new Map<string, Entry[]>();
+  for (const entry of allEntries) {
+    const key = dateKey(entry.tanggal);
+    if (!groupedEntries.has(key)) groupedEntries.set(key, []);
+    groupedEntries.get(key)!.push(entry);
+  }
+
+  for (const [key, entries] of groupedEntries) {
+    const tanggalDisplay = entries[0].tanggal.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    const flatEntries: FlatEntry[] = [];
+
+    for (const entry of entries) {
+      if (entry.jenis === "barang") {
+        runningBalance += entry.total;
+        flatEntries.push({
+          id: idx++,
+          jenis: "barang",
+          items: entry.items,
+          total: entry.total,
+          sisa: runningBalance,
+        });
+      } else {
+        runningBalance -= entry.nominal;
+        flatEntries.push({
+          id: idx++,
+          jenis: "nitip",
+          nominal: entry.nominal,
+          sisa: runningBalance,
+        });
+      }
+    }
+
+    grouped.push({
+      tanggal: key,
+      tanggalDisplay,
+      entries: flatEntries,
+    });
+  }
+
   return {
     nama: customer.name,
     sisaHutang,
-    riwayat,
+    riwayatHari: grouped,
   };
 }

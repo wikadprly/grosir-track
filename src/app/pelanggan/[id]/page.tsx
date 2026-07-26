@@ -13,21 +13,12 @@ export default async function DetailPelangganPage({ params }: { params: Promise<
     );
   }
 
-  const riwayatFormatted = data.riwayat.map((r: any) => ({
-    ...r,
-    tanggal: new Date(r.tanggal).toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }),
-  }));
-
   return (
     <DetailPelangganClient
       pelangganId={id}
       namaPelanggan={data.nama}
       sisaHutang={data.sisaHutang}
-      riwayatTransaksi={riwayatFormatted}
+      riwayatHari={data.riwayatHari}
     />
   );
 }

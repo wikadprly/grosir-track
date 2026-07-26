@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, MoreVertical, Package, Banknote, X, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -9,38 +9,41 @@ const formatAngka = (angka: number) => {
   return new Intl.NumberFormat("id-ID").format(angka);
 };
 
-interface RiwayatBarang {
-  jenis: "barang";
-  id: string;
-  tanggal: string;
-  items: { nama: string; harga: number }[];
-  total: number;
+interface FlatEntry {
+  id: number;
+  jenis: "barang" | "nitip";
+  items?: { nama: string; harga: number }[];
+  total?: number;
+  nominal?: number;
+  sisa: number;
 }
 
-interface RiwayatNitip {
-  jenis: "nitip";
-  id: string;
+interface HariRiwayat {
   tanggal: string;
-  nominal: number;
+  tanggalDisplay: string;
+  entries: FlatEntry[];
 }
-
-type RiwayatItem = RiwayatBarang | RiwayatNitip;
 
 interface Props {
   pelangganId: string;
   namaPelanggan: string;
   sisaHutang: number;
-  riwayatTransaksi: RiwayatItem[];
+  riwayatHari: HariRiwayat[];
 }
 
-export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisaHutang, riwayatTransaksi }: Props) {
+export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisaHutang, riwayatHari }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "instant" });
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#faf9f7] relative pb-28">
-      {/* 1. HEADER */}
-      <div className="flex justify-between items-center px-5 pt-8 pb-4 bg-[#faf9f7] sticky top-0 z-10">
+      {/* 1. HEADER (sticky) */}
+      <div className="sticky top-0 z-10 bg-[#faf9f7] px-5 pt-8 pb-4 flex justify-between items-center">
         <Link href="/pelanggan" className="text-[#e65c5c] active:scale-95 transition-transform">
           <ArrowLeft size={26} />
         </Link>
@@ -50,63 +53,66 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
         </button>
       </div>
 
-      {/* 2. KARTU SISA HUTANG */}
-      <div className="px-5 mt-2">
-        <div className="bg-[#fff5f5] border border-[#ffe6e6] rounded-2xl p-5 shadow-sm">
-          <p className="text-[15px] font-semibold text-gray-700 mb-1">Sisa Hutang</p>
-          <p className="text-3xl font-bold text-[#e65c5c]">
-            {sisaHutang > 0 ? `Rp ${formatAngka(sisaHutang)}` : "LUNAS"}
-          </p>
-        </div>
-      </div>
-
-      {/* 3. DAFTAR RIWAYAT TRANSAKSI */}
-      <div className="px-5 mt-8 space-y-6">
-        {riwayatTransaksi.length === 0 ? (
+      {/* 2. DAFTAR RIWAYAT PER HARI */}
+      <div className="px-5 mt-4 space-y-6">
+        {riwayatHari.length === 0 ? (
           <p className="text-center text-gray-400 text-sm">Belum ada transaksi</p>
         ) : (
-          riwayatTransaksi.map((trx, index) => (
-            <div key={trx.id} className={index !== 0 ? "pt-6 border-t border-gray-200" : ""}>
-              <p className="text-[15px] font-bold text-gray-900 mb-4">{trx.tanggal}</p>
-              
-              {trx.jenis === "barang" ? (
-                <div>
-                  <div className="flex items-center gap-2 mb-3 text-[#3b82f6]">
-                    <Package size={20} strokeWidth={2.5} />
-                    <span className="text-[15px] font-bold">Barang</span>
-                  </div>
-                  
-                  <div className="space-y-2.5 mb-3">
-                    {trx.items.map((item, idx) => (
-                      <div key={idx} className="flex justify-between text-[15px] text-gray-700">
-                        <span>{item.nama}</span>
-                        <span>{formatAngka(item.harga)}</span>
+          riwayatHari.map((hari) => (
+            <div key={hari.tanggal} className="border-b border-gray-200 pb-6 last:border-b-0">
+              <h2 className="text-[16px] font-bold text-gray-900 mb-4">{hari.tanggalDisplay}</h2>
+
+              {hari.entries.map((entry) => (
+                <div key={entry.id} className="mb-4 last:mb-0">
+                  {entry.jenis === "nitip" ? (
+                    <>
+                      <div className="flex justify-between items-center mb-1">
+                        <div className="flex items-center gap-2 text-[#20a049]">
+                          <Banknote size={18} strokeWidth={2.5} />
+                          <span className="text-[14px] font-bold">Nitip (Pembayaran)</span>
+                        </div>
+                        <span className="text-[14px] font-bold text-[#20a049]">
+                          -Rp {formatAngka(entry.nominal!)}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                  
-                  <div className="flex justify-between text-[15px] font-bold text-gray-900 mb-1 pt-1">
-                    <span>Total</span>
-                    <span>{formatAngka(trx.total)}</span>
-                  </div>
+                      <div className="flex justify-between text-[14px] font-bold pl-7">
+                        <span className="text-gray-900">Sisa</span>
+                        <span className="text-[#e65c5c]">Rp {formatAngka(entry.sisa)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-center mb-2">
+                        <div className="flex items-center gap-2 text-[#3b82f6]">
+                          <Package size={18} strokeWidth={2.5} />
+                          <span className="text-[14px] font-bold">Barang ({entry.items!.length} item)</span>
+                        </div>
+                        <span className="text-[14px] font-bold text-gray-900">
+                          +Rp {formatAngka(entry.total!)}
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 mb-2">
+                        {entry.items!.map((item, idx) => (
+                          <div key={idx} className="flex justify-between text-[14px] text-gray-700 pl-7">
+                            <span>{item.nama}</span>
+                            <span>Rp {formatAngka(item.harga)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between text-[14px] font-bold pl-7 mt-3">
+                        <span className="text-gray-900">Sisa</span>
+                        <span className="text-[#e65c5c]">Rp {formatAngka(entry.sisa)}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-              ) : (
-                <div>
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="flex items-center gap-2 text-[#20a049]">
-                      <Banknote size={20} strokeWidth={2.5} />
-                      <span className="text-[15px] font-bold">Nitip (Pembayaran)</span>
-                    </div>
-                    <span className="text-[15px] font-bold text-[#20a049]">
-                      {formatAngka(trx.nominal)}
-                    </span>
-                  </div>
-                </div>
-              )}
+              ))}
             </div>
           ))
         )}
       </div>
+
+      <div ref={bottomRef} />
 
       {/* 4. TOMBOL TAMBAH CATATAN */}
       <div className="fixed bottom-[88px] left-0 right-0 px-5 max-w-md mx-auto z-20 pointer-events-none">
