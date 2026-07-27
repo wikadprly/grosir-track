@@ -16,6 +16,7 @@ interface FlatEntry {
   total?: number;
   nominal?: number;
   sisa: number;
+  jam?: string;
 }
 
 interface HariRiwayat {
@@ -70,12 +71,13 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
                         <div className="flex items-center gap-2 text-[#20a049]">
                           <Banknote size={18} strokeWidth={2.5} />
                           <span className="text-[14px] font-bold">Nitip (Pembayaran)</span>
+                          <span className="text-[12px] text-gray-400 font-medium">{entry.jam}</span>
                         </div>
                         <span className="text-[14px] font-bold text-[#20a049]">
                           -Rp {formatAngka(entry.nominal!)}
                         </span>
                       </div>
-                      <div className="flex justify-between text-[14px] font-bold pl-7">
+                      <div className="flex justify-between text-[14px] font-bold pl-10">
                         <span className="text-gray-900">Sisa</span>
                         <span className="text-[#e65c5c]">Rp {formatAngka(entry.sisa)}</span>
                       </div>
@@ -86,20 +88,21 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
                         <div className="flex items-center gap-2 text-[#3b82f6]">
                           <Package size={18} strokeWidth={2.5} />
                           <span className="text-[14px] font-bold">Barang ({entry.items!.length} item)</span>
+                          <span className="text-[12px] text-gray-400 font-medium">{entry.jam}</span>
                         </div>
                         <span className="text-[14px] font-bold text-gray-900">
                           +Rp {formatAngka(entry.total!)}
                         </span>
                       </div>
                       <div className="space-y-1.5 mb-2">
-                        {entry.items!.map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-[14px] text-gray-700 pl-7">
+                        {entry.items!.map((item, i) => (
+                          <div key={i} className="flex justify-between text-[14px] text-gray-700 pl-10">
                             <span>{item.nama}</span>
                             <span>Rp {formatAngka(item.harga)}</span>
                           </div>
                         ))}
                       </div>
-                      <div className="flex justify-between text-[14px] font-bold pl-7 mt-3">
+                      <div className="flex justify-between text-[14px] font-bold pl-10 mt-3">
                         <span className="text-gray-900">Sisa</span>
                         <span className="text-[#e65c5c]">Rp {formatAngka(entry.sisa)}</span>
                       </div>

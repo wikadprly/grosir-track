@@ -19,7 +19,6 @@ export async function getCustomerDetail(id: string) {
 
   if (!customer) return null;
 
-  // Gabungkan semua transaksi dan pembayaran
   type Entry =
     | { jenis: "barang"; tanggal: Date; items: { nama: string; harga: number }[]; total: number }
     | { jenis: "nitip"; tanggal: Date; nominal: number };
@@ -46,16 +45,18 @@ export async function getCustomerDetail(id: string) {
     });
   }
 
-  // Sort dari yang PALING LAMA (terbaru di bawah)
   allEntries.sort((a, b) => a.tanggal.getTime() - b.tanggal.getTime());
 
-  // Hitung sisa hutang
   const totalTransaksi = customer.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
   const totalPembayaran = customer.payments.reduce((sum, p) => sum + p.amount, 0);
   const sisaHutang = totalTransaksi - totalPembayaran;
 
-  // Group by tanggal, tapi tiap entry punya sisa masing-masing
-  const dateKey = (d: Date) => d.toISOString().split("T")[0];
+  const dateKey = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
 
   interface FlatEntry {
     id: number;
@@ -64,6 +65,7 @@ export async function getCustomerDetail(id: string) {
     total?: number;
     nominal?: number;
     sisa: number;
+    jam?: string;
   }
 
   interface HariGroup {
@@ -76,7 +78,6 @@ export async function getCustomerDetail(id: string) {
   let idx = 0;
   let runningBalance = 0;
 
-  // Group entries by date, tapi tetap urut chronologis dalam 1 hari
   const groupedEntries = new Map<string, Entry[]>();
   for (const entry of allEntries) {
     const key = dateKey(entry.tanggal);
@@ -94,6 +95,10 @@ export async function getCustomerDetail(id: string) {
     const flatEntries: FlatEntry[] = [];
 
     for (const entry of entries) {
+      const h = String(entry.tanggal.getHours()).padStart(2, "0");
+      const m = String(entry.tanggal.getMinutes()).padStart(2, "0");
+      const jam = `${h}.${m}`;
+
       if (entry.jenis === "barang") {
         runningBalance += entry.total;
         flatEntries.push({
@@ -102,6 +107,7 @@ export async function getCustomerDetail(id: string) {
           items: entry.items,
           total: entry.total,
           sisa: runningBalance,
+          jam,
         });
       } else {
         runningBalance -= entry.nominal;
@@ -110,6 +116,7 @@ export async function getCustomerDetail(id: string) {
           jenis: "nitip",
           nominal: entry.nominal,
           sisa: runningBalance,
+          jam,
         });
       }
     }

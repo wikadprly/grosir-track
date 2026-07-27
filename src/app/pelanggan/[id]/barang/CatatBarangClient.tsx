@@ -101,9 +101,11 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
     if (selectedItems.length === 0 || saving) return;
     setSaving(true);
     try {
+      const now = new Date();
+      const waktu = `${tanggal}T${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
       await createTransaction(
         pelangganId,
-        tanggal,
+        waktu,
         selectedItems.map((item) => ({
           productId: item.id,
           qty: item.qty,

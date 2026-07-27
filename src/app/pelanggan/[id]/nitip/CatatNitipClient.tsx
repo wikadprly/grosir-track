@@ -37,7 +37,9 @@ export default function CatatNitipClient({ pelangganId }: Props) {
     setSaving(true);
     try {
       const amount = parseInt(nominal.replace(/\D/g, ""), 10);
-      await createPayment(pelangganId, amount, tanggal, catatan || undefined);
+      const now = new Date();
+      const waktu = `${tanggal}T${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
+      await createPayment(pelangganId, amount, waktu, catatan || undefined);
       router.push(`/pelanggan/${pelangganId}`);
     } catch (error) {
       console.error("Gagal menyimpan:", error);
