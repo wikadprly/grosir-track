@@ -2,8 +2,11 @@
 
 import prisma from "@/lib/prisma";
 
+const productSelect = { id: true, name: true, defaultPrice: true } as const;
+
 export async function getProducts() {
   const products = await prisma.product.findMany({
+    select: productSelect,
     orderBy: { name: "asc" },
   });
   return products.map((p) => ({

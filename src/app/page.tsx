@@ -1,4 +1,4 @@
-import { ReceiptText, ArrowDownToLine, Wallet, UserCircle2 } from "lucide-react";
+import { ReceiptText, ArrowDownToLine, Wallet, UserCircle2, Settings } from "lucide-react";
 import Link from "next/link";
 import { getDashboardData } from "./actions";
 
@@ -13,8 +13,15 @@ export default async function Beranda() {
     <main className="min-h-screen">
       {/* Header */}
       <div className="bg-white p-6 pb-5 rounded-b-3xl shadow-sm mb-6 border-b border-gray-100">
-        <h1 className="text-3xl font-bold text-gray-800">Selamat datang Bu 💕</h1>
-        <p className="text-gray-500 text-base mt-1">Semoga hari ini lancar selalu</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Selamat datang Bu 💕</h1>
+            <p className="text-gray-500 text-base mt-1">Semoga hari ini lancar selalu</p>
+          </div>
+          <Link href="/pengaturan" className="p-2 -mt-1 -mr-1 active:bg-gray-100 rounded-xl transition-colors">
+            <Settings size={24} className="text-gray-400" />
+          </Link>
+        </div>
       </div>
 
       <div className="px-5 space-y-8">

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, MoreVertical, Package, Banknote, X, ShoppingBag } from "lucide-react";
+import { useState, useEffect, useRef, useTransition } from "react";
+import { ArrowLeft, MoreVertical, Package, Banknote, X, ShoppingBag, Trash2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { deleteTransaction, deletePayment } from "./actions";
 
 const formatAngka = (angka: number) => {
   return new Intl.NumberFormat("id-ID").format(angka);
@@ -11,6 +12,7 @@ const formatAngka = (angka: number) => {
 
 interface FlatEntry {
   id: number;
+  dbId: string;
   jenis: "barang" | "nitip";
   items?: { nama: string; harga: number }[];
   total?: number;
@@ -34,12 +36,27 @@ interface Props {
 
 export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisaHutang, riwayatHari }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [hapusEntry, setHapusEntry] = useState<FlatEntry | null>(null);
+  const [isPending, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "instant" });
   }, []);
+
+  const konfirmasiHapus = async () => {
+    if (!hapusEntry) return;
+    startTransition(async () => {
+      if (hapusEntry.jenis === "barang") {
+        await deleteTransaction(hapusEntry.dbId, pelangganId);
+      } else {
+        await deletePayment(hapusEntry.dbId, pelangganId);
+      }
+      setHapusEntry(null);
+      router.refresh();
+    });
+  };
 
   return (
     <main className="min-h-screen bg-[#faf9f7] relative pb-28">
@@ -54,7 +71,17 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
         </button>
       </div>
 
-      {/* 2. DAFTAR RIWAYAT PER HARI */}
+      {/* Total Sisa Hutang */}
+      <div className="px-5 mb-4">
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex justify-between items-center">
+          <span className="text-[15px] text-gray-500 font-medium">Total Sisa Hutang</span>
+          <span className={`text-xl font-bold ${sisaHutang > 0 ? "text-[#e65c5c]" : "text-[#20a049]"}`}>
+            {sisaHutang > 0 ? `Rp ${formatAngka(sisaHutang)}` : "LUNAS"}
+          </span>
+        </div>
+      </div>
+
+      {/* 3. DAFTAR RIWAYAT PER HARI */}
       <div className="px-5 mt-4 space-y-6">
         {riwayatHari.length === 0 ? (
           <p className="text-center text-gray-400 text-sm">Belum ada transaksi</p>
@@ -64,7 +91,7 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
               <h2 className="text-[16px] font-bold text-gray-900 mb-4">{hari.tanggalDisplay}</h2>
 
               {hari.entries.map((entry) => (
-                <div key={entry.id} className="mb-4 last:mb-0">
+                <div key={entry.id} className="mb-4 last:mb-0 group relative">
                   {entry.jenis === "nitip" ? (
                     <>
                       <div className="flex justify-between items-center mb-1">
@@ -73,9 +100,17 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
                           <span className="text-[14px] font-bold">Nitip (Pembayaran)</span>
                           <span className="text-[12px] text-gray-400 font-medium">{entry.jam}</span>
                         </div>
-                        <span className="text-[14px] font-bold text-[#20a049]">
-                          -Rp {formatAngka(entry.nominal!)}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setHapusEntry(entry)}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <span className="text-[14px] font-bold text-[#20a049]">
+                            -Rp {formatAngka(entry.nominal!)}
+                          </span>
+                        </div>
                       </div>
                       <div className="flex justify-between text-[14px] font-bold pl-10">
                         <span className="text-gray-900">Sisa</span>
@@ -90,9 +125,17 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
                           <span className="text-[14px] font-bold">Barang ({entry.items!.length} item)</span>
                           <span className="text-[12px] text-gray-400 font-medium">{entry.jam}</span>
                         </div>
-                        <span className="text-[14px] font-bold text-gray-900">
-                          +Rp {formatAngka(entry.total!)}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setHapusEntry(entry)}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <span className="text-[14px] font-bold text-gray-900">
+                            +Rp {formatAngka(entry.total!)}
+                          </span>
+                        </div>
                       </div>
                       <div className="space-y-1.5 mb-2">
                         {entry.items!.map((item, i) => (
@@ -115,13 +158,49 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
         )}
       </div>
 
+      {/* MODAL KONFIRMASI HAPUS */}
+      {hapusEntry && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-[2px] max-w-md mx-auto">
+          <div className="bg-white w-full rounded-t-[28px] px-6 pt-6 pb-8 animate-in slide-in-from-bottom-10 duration-200">
+            <div className="flex flex-col items-center text-center mb-6">
+              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <AlertTriangle size={28} className="text-red-500" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Hapus Catatan?</h2>
+              <p className="text-[15px] text-gray-500 mt-2">
+                {hapusEntry.jenis === "barang"
+                  ? `Transaksi barang sebesar Rp ${formatAngka(hapusEntry.total!)} akan dihapus.`
+                  : `Pembayaran Rp ${formatAngka(hapusEntry.nominal!)} akan dihapus.`}
+              </p>
+              <p className="text-[14px] text-red-400 font-semibold mt-1">Tidak bisa dibatalkan.</p>
+            </div>
+            <div className="space-y-3">
+              <button
+                onClick={konfirmasiHapus}
+                disabled={isPending}
+                className="w-full py-3.5 font-bold text-white bg-red-500 rounded-[18px] active:bg-red-600 transition-colors text-[17px] disabled:opacity-50"
+              >
+                {isPending ? "Menghapus..." : "Ya, Hapus"}
+              </button>
+              <button
+                onClick={() => setHapusEntry(null)}
+                disabled={isPending}
+                className="w-full py-3.5 font-bold text-gray-900 bg-white border border-gray-200 rounded-[18px] active:bg-gray-100 transition-colors text-[17px]"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div ref={bottomRef} />
 
       {/* 4. TOMBOL TAMBAH CATATAN */}
-      <div className="fixed bottom-[88px] left-0 right-0 px-5 max-w-md mx-auto z-20 pointer-events-none">
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md z-20">
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="w-full bg-[#e65c5c] text-white font-bold py-3.5 rounded-2xl shadow-[0_8px_20px_rgba(230,92,92,0.3)] hover:bg-red-600 active:scale-[0.98] transition-all pointer-events-auto text-[17px] tracking-wide"
+          className="w-full bg-[#e65c5c] text-white font-bold py-3.5 rounded-2xl shadow-[0_8px_20px_rgba(230,92,92,0.3)] hover:bg-red-600 active:scale-[0.98] transition-all text-[17px] tracking-wide"
         >
           + Tambah Catatan
         </button>

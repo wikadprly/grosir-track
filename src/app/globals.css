@@ -3,12 +3,17 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-size-base: 18px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
+}
+
+html {
+  font-size: var(--font-size-base);
 }
 
 body {
@@ -19,6 +24,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+}
+
+input, button, select, textarea, a {
+  font-size: 18px;
+}
+
+button, a, [role="button"], input, select {
+  min-height: 48px;
 }
 
 /* Safe area untuk iPhone notch */

@@ -86,12 +86,12 @@ export default function BarangPage() {
   return (
     <main className="min-h-screen">
       {/* Header */}
-      <div className="bg-white p-5 pb-4 rounded-b-3xl shadow-sm mb-6 border-b border-gray-100">
+      <div className="flex items-center justify-between px-5 pt-8 pb-4 bg-[#faf9f7] sticky top-0 z-20 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <Link href="/pengaturan" className="p-2 -ml-2 active:bg-gray-100 rounded-xl transition-colors">
+          <Link href="/" className="p-2 -ml-2 active:bg-gray-100 rounded-xl transition-colors">
             <ArrowLeft size={24} className="text-gray-600" />
           </Link>
-          <h1 className="text-3xl font-bold text-gray-800">Kelola Barang</h1>
+          <h1 className="text-xl font-bold text-gray-900">Kelola Barang</h1>
         </div>
       </div>
 
@@ -99,7 +99,7 @@ export default function BarangPage() {
       {loading ? (
         <div className="px-5 text-center text-gray-400 mt-10">Memuat data...</div>
       ) : (
-        <div className="px-5 space-y-3">
+        <div className="px-5 mt-4 space-y-3">
           {daftarBarang.map((b) => (
             <div
               key={b.id}
@@ -107,7 +107,7 @@ export default function BarangPage() {
             >
               <div>
                 <p className="text-base font-bold text-gray-800">{b.name}</p>
-                <p className="text-sm text-gray-400">{formatRupiah(b.price)}</p>
+                <p className="text-sm text-[#e65c5c] font-semibold">{formatRupiah(b.price)}</p>
               </div>
               <div className="flex items-center gap-2">
                 <button

@@ -1,5 +1,7 @@
 import CatatNitipClient from "./CatatNitipClient";
 
+export const dynamic = "force-dynamic";
+
 export default async function CatatNitipPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 

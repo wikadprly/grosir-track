@@ -241,7 +241,7 @@ async function main() {
     data: {
       id: "t-dar-1",
       customerId: "c-dar",
-      totalAmount: 750000,
+      totalAmount: 677000,
       date: new Date("2025-07-04T08:00:00.000Z"),
     },
   });
@@ -252,7 +252,7 @@ async function main() {
       { id: "td-dar-1-3", transactionId: t1dar.id, productId: "p-abcsusu", qty: 1, priceAtThatTime: 197000, subtotal: 197000 },
       { id: "td-dar-1-4", transactionId: t1dar.id, productId: "p-rokok1", qty: 1, priceAtThatTime: 22000, subtotal: 22000 },
       { id: "td-dar-1-5", transactionId: t1dar.id, productId: "p-gas3kg", subtotal: 22000, priceAtThatTime: 22000, qty: 1 },
-      { id: "td-dar-1-6", transactionId: t1dar.id, productId: "p-teh1", subtotal: 81000, priceAtThatTime: 8000, qty: 1 },
+      { id: "td-dar-1-6", transactionId: t1dar.id, productId: "p-teh1", subtotal: 8000, priceAtThatTime: 8000, qty: 1 },
     ],
   });
   await prisma.payment.create({
@@ -339,7 +339,7 @@ async function main() {
     data: {
       id: "t-lilis-1",
       customerId: "c-lilis",
-      totalAmount: 350000,
+      totalAmount: 533000,
       date: new Date("2025-07-05T10:00:00.000Z"),
     },
   });
@@ -352,14 +352,14 @@ async function main() {
       { id: "td-lilis-1-5", transactionId: t1lilis.id, productId: "p-sabun1", subtotal: 20000, priceAtThatTime: 4000, qty: 5 },
       { id: "td-lilis-1-6", transactionId: t1lilis.id, productId: "p-rokok1", subtotal: 22000, priceAtThatTime: 22000, qty: 1 },
       { id: "td-lilis-1-7", transactionId: t1lilis.id, productId: "p-gas3kg", subtotal: 22000, priceAtThatTime: 22000, qty: 1 },
-      { id: "td-lilis-1-8", transactionId: t1lilis.id, productId: "p-abcsusu", subtotal: 14000, priceAtThatTime: 197000, qty: 1 },
+      { id: "td-lilis-1-8", transactionId: t1lilis.id, productId: "p-abcsusu", subtotal: 197000, priceAtThatTime: 197000, qty: 1 },
     ],
   });
   await prisma.payment.create({
     data: {
       id: "pay-lilis-1",
       customerId: "c-lilis",
-      amount: 350000,
+      amount: 533000,
       date: new Date("2025-07-08T14:00:00.000Z"),
       note: "Lunas",
     },

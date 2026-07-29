@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ArrowLeft, Search, Trash2, Plus, Minus, Pencil, Check, X, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,11 +38,15 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
   const [editingPriceValue, setEditingPriceValue] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const hasilPencarian = searchQuery
-    ? products.filter((item) =>
-        item.nama.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : [];
+  const hasilPencarian = useMemo(
+    () =>
+      searchQuery
+        ? products.filter((item) =>
+            item.nama.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+        : [],
+    [searchQuery, products]
+  );
 
   const tambahKeDaftar = (barang: Product) => {
     const sudahAda = selectedItems.find((item) => item.id === barang.id);

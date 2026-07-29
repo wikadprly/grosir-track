@@ -1,22 +1,22 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Home, Users, FileText, Settings } from "lucide-react";
+import { Home, Users, Package, FileText } from "lucide-react";
 import Link from "next/link";
 
 const navItems = [
   { href: "/", icon: Home, label: "Beranda" },
   { href: "/pelanggan", icon: Users, label: "Pelanggan" },
+  { href: "/barang", icon: Package, label: "Barang" },
   { href: "/laporan", icon: FileText, label: "Laporan" },
-  { href: "/pengaturan", icon: Settings, label: "Pengaturan" },
 ];
-
-const hiddenPatterns = ["/barang", "/nitip"];
 
 export default function BottomNav() {
   const pathname = usePathname();
 
-  if (hiddenPatterns.some((p) => pathname.includes(p))) return null;
+  const segments = pathname.split("/").filter(Boolean);
+  const hasSubPage = segments.length > 2 && (segments.includes("barang") || segments.includes("nitip"));
+  if (hasSubPage) return null;
 
   return (
     <nav className="fixed bottom-0 w-full max-w-lg mx-auto bg-white border-t border-gray-200 flex justify-around items-center pt-2 pb-5 px-2 z-50 rounded-t-2xl shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">

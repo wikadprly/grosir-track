@@ -38,48 +38,21 @@ export async function getDashboardData() {
       totalPiutang += totalTransaksi - totalPembayaran;
     }
 
-    // 3 pelanggan terakhir (yang punya transaksi)
-    const pelangganTerakhir = await prisma.customer.findMany({
-      include: {
-        transactions: {
-          orderBy: { date: "desc" },
-          take: 1,
-          select: { date: true },
-        },
-        _count: { select: { transactions: true } },
-      },
+    // 3 pelanggan terakhir dengan saldo (1 query aja)
+    const pelangganWithSaldo = await prisma.customer.findMany({
       where: { transactions: { some: {} } },
       orderBy: { transactions: { _count: "desc" } },
       take: 3,
-    });
-
-    const pelangganTerakhirFormatted = pelangganTerakhir.map((c) => {
-      const totalTransaksi = 0; // will compute below
-      return {
-        id: c.id,
-        name: c.name,
-      };
-    });
-
-    // Compute saldo for the 3 recent customers
-    const pelangganWithSaldo = await Promise.all(
-      pelangganTerakhirFormatted.map(async (p) => {
-        const customer = await prisma.customer.findUnique({
-          where: { id: p.id },
-          include: {
-            transactions: { select: { totalAmount: true } },
-            payments: { select: { amount: true } },
-          },
-        });
-        const totalTransaksi = customer!.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
-        const totalPembayaran = customer!.payments.reduce((sum, p) => sum + p.amount, 0);
+      include: {
+        transactions: { select: { totalAmount: true } },
+        payments: { select: { amount: true } },
+      },
+    }).then((customers) =>
+      customers.map((c) => {
+        const totalTransaksi = c.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
+        const totalPembayaran = c.payments.reduce((sum, p) => sum + p.amount, 0);
         const saldo = totalTransaksi - totalPembayaran;
-        return {
-          id: p.id,
-          name: p.name,
-          saldo,
-          hutang: saldo > 0,
-        };
+        return { id: c.id, name: c.name, saldo, hutang: saldo > 0 };
       })
     );
 

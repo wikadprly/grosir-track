@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 export async function getCustomerDetail(id: string) {
   const customer = await prisma.customer.findUnique({
@@ -20,13 +21,14 @@ export async function getCustomerDetail(id: string) {
   if (!customer) return null;
 
   type Entry =
-    | { jenis: "barang"; tanggal: Date; items: { nama: string; harga: number }[]; total: number }
-    | { jenis: "nitip"; tanggal: Date; nominal: number };
+    | { dbId: string; jenis: "barang"; tanggal: Date; items: { nama: string; harga: number }[]; total: number }
+    | { dbId: string; jenis: "nitip"; tanggal: Date; nominal: number };
 
   const allEntries: Entry[] = [];
 
   for (const t of customer.transactions) {
     allEntries.push({
+      dbId: t.id,
       jenis: "barang",
       tanggal: t.date,
       items: t.details.map((d) => ({
@@ -39,6 +41,7 @@ export async function getCustomerDetail(id: string) {
 
   for (const p of customer.payments) {
     allEntries.push({
+      dbId: p.id,
       jenis: "nitip",
       tanggal: p.date,
       nominal: p.amount,
@@ -60,6 +63,7 @@ export async function getCustomerDetail(id: string) {
 
   interface FlatEntry {
     id: number;
+    dbId: string;
     jenis: "barang" | "nitip";
     items?: { nama: string; harga: number }[];
     total?: number;
@@ -103,6 +107,7 @@ export async function getCustomerDetail(id: string) {
         runningBalance += entry.total;
         flatEntries.push({
           id: idx++,
+          dbId: entry.dbId,
           jenis: "barang",
           items: entry.items,
           total: entry.total,
@@ -113,6 +118,7 @@ export async function getCustomerDetail(id: string) {
         runningBalance -= entry.nominal;
         flatEntries.push({
           id: idx++,
+          dbId: entry.dbId,
           jenis: "nitip",
           nominal: entry.nominal,
           sisa: runningBalance,
@@ -133,4 +139,15 @@ export async function getCustomerDetail(id: string) {
     sisaHutang,
     riwayatHari: grouped,
   };
+}
+
+export async function deleteTransaction(id: string, customerId: string) {
+  await prisma.transactionDetail.deleteMany({ where: { transactionId: id } });
+  await prisma.transaction.delete({ where: { id } });
+  revalidatePath(`/pelanggan/${customerId}`);
+}
+
+export async function deletePayment(id: string, customerId: string) {
+  await prisma.payment.delete({ where: { id } });
+  revalidatePath(`/pelanggan/${customerId}`);
 }
