@@ -1,6 +1,8 @@
 import { TrendingUp, TrendingDown, Download } from "lucide-react";
 import { getLaporanData } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 function formatRupiah(angka: number) {
   return "Rp " + angka.toLocaleString("id-ID");
 }
@@ -22,10 +24,13 @@ export default async function LaporanPage() {
             <h1 className="text-3xl font-bold text-gray-800">Laporan</h1>
             <p className="text-gray-500 text-base mt-1">Bulan {data.bulan}</p>
           </div>
-          <button className="flex items-center gap-2 bg-gray-100 px-4 py-3 rounded-xl active:bg-gray-200 transition-colors">
+          <a
+            href="/api/export/laporan"
+            className="flex items-center gap-2 bg-gray-100 px-4 py-3 rounded-xl active:bg-gray-200 transition-colors"
+          >
             <Download size={20} className="text-gray-600" />
             <span className="text-sm font-semibold text-gray-600">Export</span>
-          </button>
+          </a>
         </div>
       </div>
 

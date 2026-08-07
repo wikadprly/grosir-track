@@ -2,6 +2,8 @@ import { ReceiptText, ArrowDownToLine, Wallet, UserCircle2, Settings } from "luc
 import Link from "next/link";
 import { getDashboardData } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 const formatRupiah = (angka: number) => {
   return "Rp " + angka.toLocaleString("id-ID");
 };

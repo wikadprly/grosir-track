@@ -38,22 +38,33 @@ export async function getDashboardData() {
       totalPiutang += totalTransaksi - totalPembayaran;
     }
 
-    // 3 pelanggan terakhir dengan saldo (1 query aja)
+    // 3 pelanggan terakhir yang bertransaksi (1 query aja)
     const pelangganWithSaldo = await prisma.customer.findMany({
       where: { transactions: { some: {} } },
-      orderBy: { transactions: { _count: "desc" } },
-      take: 3,
       include: {
-        transactions: { select: { totalAmount: true } },
+        transactions: { select: { totalAmount: true, date: true } },
         payments: { select: { amount: true } },
       },
     }).then((customers) =>
-      customers.map((c) => {
-        const totalTransaksi = c.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
-        const totalPembayaran = c.payments.reduce((sum, p) => sum + p.amount, 0);
-        const saldo = totalTransaksi - totalPembayaran;
-        return { id: c.id, name: c.name, saldo, hutang: saldo > 0 };
-      })
+      customers
+        .map((c) => {
+          const totalTransaksi = c.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
+          const totalPembayaran = c.payments.reduce((sum, p) => sum + p.amount, 0);
+          const saldo = totalTransaksi - totalPembayaran;
+          const transaksiTerakhir = c.transactions.reduce(
+            (latest, t) => (t.date > latest ? t.date : latest),
+            new Date(0)
+          );
+          return { id: c.id, name: c.name, saldo, hutang: saldo > 0, transaksiTerakhir };
+        })
+        .sort((a, b) => b.transaksiTerakhir.getTime() - a.transaksiTerakhir.getTime())
+        .slice(0, 3)
+        .map((item) => ({
+          id: item.id,
+          name: item.name,
+          saldo: item.saldo,
+          hutang: item.hutang,
+        }))
     );
 
     return {

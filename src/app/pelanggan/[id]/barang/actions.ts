@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 const productSelect = { id: true, name: true, defaultPrice: true } as const;
 
@@ -39,6 +40,9 @@ export async function createTransaction(
     },
     include: { details: true },
   });
+
+  revalidatePath(`/pelanggan/${customerId}`);
+  revalidatePath("/");
 
   return transaction;
 }

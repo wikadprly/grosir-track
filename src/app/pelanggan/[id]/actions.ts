@@ -142,12 +142,16 @@ export async function getCustomerDetail(id: string) {
 }
 
 export async function deleteTransaction(id: string, customerId: string) {
-  await prisma.transactionDetail.deleteMany({ where: { transactionId: id } });
-  await prisma.transaction.delete({ where: { id } });
+  await prisma.$transaction([
+    prisma.transactionDetail.deleteMany({ where: { transactionId: id } }),
+    prisma.transaction.delete({ where: { id } }),
+  ]);
   revalidatePath(`/pelanggan/${customerId}`);
+  revalidatePath("/");
 }
 
 export async function deletePayment(id: string, customerId: string) {
   await prisma.payment.delete({ where: { id } });
   revalidatePath(`/pelanggan/${customerId}`);
+  revalidatePath("/");
 }

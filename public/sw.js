@@ -1,8 +1,16 @@
-const CACHE_NAME = "buku-bon-v1";
+const CACHE_NAME = "buku-bon-v2";
 const STATIC_ASSETS = [
   "/icon.svg",
+  "/icon-192.png",
+  "/icon-512.png",
   "/manifest.json",
 ];
+
+const isRscRequest = (request) => {
+  const rscHeader = request.headers.get("RSC");
+  const prefetchHeader = request.headers.get("Next-Router-Prefetch");
+  return rscHeader === "1" || prefetchHeader === "1" || request.url.includes("_rsc=");
+};
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -27,20 +35,16 @@ self.addEventListener("fetch", (event) => {
 
   if (request.method !== "GET") return;
 
-  if (request.url.includes("/api/")) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Jangan cache request RSC / prefetch dan API — selalu ambil dari jaringan.
+  // Stream RSC yang basi dari cache bisa merusak React Flight client.
+  if (isRscRequest(request) || url.pathname.startsWith("/api/")) {
     return;
   }
 
-  // Network-first for navigation requests (HTML pages)
+  // Network-first untuk navigasi (HTML), fallback ke cache saat offline.
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -56,7 +60,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Stale-while-revalidate for static assets (CSS, JS, images)
+  // Stale-while-revalidate untuk aset statis (CSS, JS, gambar).
   event.respondWith(
     caches.match(request).then((cached) => {
       const fetched = fetch(request).then((response) => {

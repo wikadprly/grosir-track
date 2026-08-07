@@ -1,6 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 export async function createPayment(
   customerId: string,
@@ -16,6 +17,9 @@ export async function createPayment(
       note: note || null,
     },
   });
+
+  revalidatePath(`/pelanggan/${customerId}`);
+  revalidatePath("/");
 
   return payment;
 }
