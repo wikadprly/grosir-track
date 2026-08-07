@@ -1,11 +1,11 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { startOfJakartaDay, endOfJakartaDay } from "@/lib/time";
 
 export async function getDashboardData() {
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const startOfDay = startOfJakartaDay();
+  const endOfDay = endOfJakartaDay();
 
   try {
     // Transaksi hari ini

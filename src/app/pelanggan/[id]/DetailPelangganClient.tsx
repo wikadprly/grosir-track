@@ -5,10 +5,7 @@ import { ArrowLeft, MoreVertical, Package, Banknote, X, ShoppingBag, Trash2, Ale
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { deleteTransaction, deletePayment } from "./actions";
-
-const formatAngka = (angka: number) => {
-  return new Intl.NumberFormat("id-ID").format(angka);
-};
+import { formatRupiah } from "@/lib/format";
 
 interface FlatEntry {
   id: number;
@@ -76,7 +73,7 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex justify-between items-center">
           <span className="text-[15px] text-gray-500 font-medium">Total Sisa Hutang</span>
           <span className={`text-xl font-bold ${sisaHutang > 0 ? "text-[#e65c5c]" : "text-[#20a049]"}`}>
-            {sisaHutang > 0 ? `Rp ${formatAngka(sisaHutang)}` : "LUNAS"}
+            {sisaHutang > 0 ? formatRupiah(sisaHutang) : "LUNAS"}
           </span>
         </div>
       </div>
@@ -108,13 +105,13 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
                             <Trash2 size={16} />
                           </button>
                           <span className="text-[14px] font-bold text-[#20a049]">
-                            -Rp {formatAngka(entry.nominal!)}
+                            -{formatRupiah(entry.nominal!)}
                           </span>
                         </div>
                       </div>
                       <div className="flex justify-between text-[14px] font-bold pl-10">
                         <span className="text-gray-900">Sisa</span>
-                        <span className="text-[#e65c5c]">Rp {formatAngka(entry.sisa)}</span>
+                        <span className="text-[#e65c5c]">{formatRupiah(entry.sisa)}</span>
                       </div>
                     </>
                   ) : (
@@ -133,7 +130,7 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
                             <Trash2 size={16} />
                           </button>
                           <span className="text-[14px] font-bold text-gray-900">
-                            +Rp {formatAngka(entry.total!)}
+                            +{formatRupiah(entry.total!)}
                           </span>
                         </div>
                       </div>
@@ -141,13 +138,13 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
                         {entry.items!.map((item, i) => (
                           <div key={i} className="flex justify-between text-[14px] text-gray-700 pl-10">
                             <span>{item.nama}</span>
-                            <span>Rp {formatAngka(item.harga)}</span>
+                            <span>{formatRupiah(item.harga)}</span>
                           </div>
                         ))}
                       </div>
                       <div className="flex justify-between text-[14px] font-bold pl-10 mt-3">
                         <span className="text-gray-900">Sisa</span>
-                        <span className="text-[#e65c5c]">Rp {formatAngka(entry.sisa)}</span>
+                        <span className="text-[#e65c5c]">{formatRupiah(entry.sisa)}</span>
                       </div>
                     </>
                   )}
@@ -169,8 +166,8 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
               <h2 className="text-xl font-bold text-gray-900">Hapus Catatan?</h2>
               <p className="text-[15px] text-gray-500 mt-2">
                 {hapusEntry.jenis === "barang"
-                  ? `Transaksi barang sebesar Rp ${formatAngka(hapusEntry.total!)} akan dihapus.`
-                  : `Pembayaran Rp ${formatAngka(hapusEntry.nominal!)} akan dihapus.`}
+                  ? `Transaksi barang sebesar ${formatRupiah(hapusEntry.total!)} akan dihapus.`
+                  : `Pembayaran ${formatRupiah(hapusEntry.nominal!)} akan dihapus.`}
               </p>
               <p className="text-[14px] text-red-400 font-semibold mt-1">Tidak bisa dibatalkan.</p>
             </div>

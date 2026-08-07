@@ -5,10 +5,7 @@ import { ArrowLeft, Search, Trash2, Plus, Minus, Pencil, Check, X, Loader2 } fro
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createTransaction } from "./actions";
-
-const formatAngka = (angka: number) => {
-  return new Intl.NumberFormat("id-ID").format(angka);
-};
+import { formatRupiah } from "@/lib/format";
 
 interface Product {
   id: string;
@@ -105,11 +102,9 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
     if (selectedItems.length === 0 || saving) return;
     setSaving(true);
     try {
-      const now = new Date();
-      const waktu = `${tanggal}T${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
       await createTransaction(
         pelangganId,
-        waktu,
+        tanggal,
         selectedItems.map((item) => ({
           productId: item.id,
           qty: item.qty,
@@ -181,7 +176,7 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
                     className="w-full flex justify-between items-center px-4 py-3.5 border-b border-gray-100 hover:bg-gray-50 active:bg-blue-50 text-left transition-colors"
                   >
                     <span className="text-[15px] font-bold text-gray-900">{item.nama}</span>
-                    <span className="text-[15px] font-bold text-gray-600">Rp {formatAngka(item.harga)}</span>
+                    <span className="text-[15px] font-bold text-gray-600">{formatRupiah(item.harga)}</span>
                   </button>
                 ))
               ) : (
@@ -225,7 +220,7 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 mt-1">
-                          <p className="text-[15px] font-bold text-[#e65c5c]">Rp {formatAngka(item.harga)}</p>
+                          <p className="text-[15px] font-bold text-[#e65c5c]">{formatRupiah(item.harga)}</p>
                           <button
                             onClick={() => mulaiEditHarga(item.id, item.harga)}
                             className="p-1 text-gray-400 hover:text-blue-500 transition-colors"
@@ -240,7 +235,7 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
                         </div>
                       )}
                       {hargaBeda && editingPriceId !== item.id && (
-                        <p className="text-[12px] text-gray-400 mt-0.5">Harga awal: Rp {formatAngka(item.hargaDefault)}</p>
+                        <p className="text-[12px] text-gray-400 mt-0.5">Harga awal: {formatRupiah(item.hargaDefault)}</p>
                       )}
                     </div>
 
@@ -270,7 +265,7 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5 pt-4 pb-6 max-w-md mx-auto shadow-[0_-10px_20px_rgba(0,0,0,0.03)] z-10">
         <div className="flex justify-between items-center mb-4 px-1">
           <span className="text-[16px] font-bold text-gray-900">Subtotal</span>
-          <span className="text-xl font-bold text-[#e65c5c]">Rp {formatAngka(subtotal)}</span>
+          <span className="text-xl font-bold text-[#e65c5c]">{formatRupiah(subtotal)}</span>
         </div>
         <button
           onClick={handleSimpan}

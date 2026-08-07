@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { jakartaDateTime, jakartaTimeNow } from "@/lib/time";
 
 export async function createPayment(
   customerId: string,
@@ -13,7 +14,7 @@ export async function createPayment(
     data: {
       customerId,
       amount,
-      date: new Date(date),
+      date: jakartaDateTime(date, jakartaTimeNow()),
       note: note || null,
     },
   });

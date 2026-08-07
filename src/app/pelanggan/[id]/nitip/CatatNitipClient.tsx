@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPayment } from "./actions";
+import { formatAngka } from "@/lib/format";
 
 interface Props {
   pelangganId: string;
@@ -28,7 +29,7 @@ export default function CatatNitipClient({ pelangganId }: Props) {
       return;
     }
 
-    const formatted = new Intl.NumberFormat("id-ID").format(parseInt(value, 10));
+    const formatted = formatAngka(parseInt(value, 10));
     setNominal(formatted);
   };
 
@@ -37,9 +38,7 @@ export default function CatatNitipClient({ pelangganId }: Props) {
     setSaving(true);
     try {
       const amount = parseInt(nominal.replace(/\D/g, ""), 10);
-      const now = new Date();
-      const waktu = `${tanggal}T${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
-      await createPayment(pelangganId, amount, waktu, catatan || undefined);
+      await createPayment(pelangganId, amount, tanggal, catatan || undefined);
       router.push(`/pelanggan/${pelangganId}`);
     } catch (error) {
       console.error("Gagal menyimpan:", error);

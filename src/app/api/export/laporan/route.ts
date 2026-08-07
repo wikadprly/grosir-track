@@ -1,23 +1,23 @@
 import prisma from "@/lib/prisma";
 import ExcelJS from "exceljs";
-
-const formatRupiah = (angka: number) => "Rp " + angka.toLocaleString("id-ID");
+import { formatRupiah } from "@/lib/format";
+import { JAKARTA_TIMEZONE, jakartaDateKey, startOfJakartaMonth, startOfNextJakartaMonth } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const startOfMonth = startOfJakartaMonth();
+  const endOfMonth = startOfNextJakartaMonth();
 
   const [hutangBulanIni, pembayaranBulanIni, customers, transactions, payments] =
     await Promise.all([
       prisma.transaction.aggregate({
-        where: { date: { gte: startOfMonth, lte: endOfMonth } },
+        where: { date: { gte: startOfMonth, lt: endOfMonth } },
         _sum: { totalAmount: true },
       }),
       prisma.payment.aggregate({
-        where: { date: { gte: startOfMonth, lte: endOfMonth } },
+        where: { date: { gte: startOfMonth, lt: endOfMonth } },
         _sum: { amount: true },
       }),
       prisma.customer.findMany({
@@ -28,7 +28,7 @@ export async function GET() {
         orderBy: { name: "asc" },
       }),
       prisma.transaction.findMany({
-        where: { date: { gte: startOfMonth, lte: endOfMonth } },
+        where: { date: { gte: startOfMonth, lt: endOfMonth } },
         include: {
           customer: { select: { name: true } },
           details: { include: { product: { select: { name: true } } } },
@@ -36,7 +36,7 @@ export async function GET() {
         orderBy: { date: "asc" },
       }),
       prisma.payment.findMany({
-        where: { date: { gte: startOfMonth, lte: endOfMonth } },
+        where: { date: { gte: startOfMonth, lt: endOfMonth } },
         include: { customer: { select: { name: true } } },
         orderBy: { date: "asc" },
       }),
@@ -50,7 +50,11 @@ export async function GET() {
   workbook.creator = "Buku Bon Ibu";
   workbook.created = new Date();
 
-  const judulBulan = now.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+  const judulBulan = now.toLocaleDateString("id-ID", {
+    month: "long",
+    year: "numeric",
+    timeZone: JAKARTA_TIMEZONE,
+  });
 
   // ── Sheet Ringkasan ──
   const wsRingkasan = workbook.addWorksheet("Ringkasan");
@@ -96,7 +100,12 @@ export async function GET() {
   ];
   wsTransaksi.getRow(1).font = { bold: true };
   for (const t of transactions) {
-    const tanggal = t.date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+    const tanggal = t.date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: JAKARTA_TIMEZONE,
+    });
     for (const d of t.details) {
       wsTransaksi.addRow({
         tanggal,
@@ -120,7 +129,12 @@ export async function GET() {
   wsBayar.getRow(1).font = { bold: true };
   for (const p of payments) {
     wsBayar.addRow({
-      tanggal: p.date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }),
+      tanggal: p.date.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: JAKARTA_TIMEZONE,
+      }),
       pelanggan: p.customer.name,
       jumlah: p.amount,
       catatan: p.note ?? "",
@@ -128,7 +142,7 @@ export async function GET() {
   }
 
   const buffer = await workbook.xlsx.writeBuffer();
-  const bulanFile = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const bulanFile = jakartaDateKey(startOfMonth).slice(0, 7);
 
   return new Response(new Uint8Array(buffer), {
     status: 200,

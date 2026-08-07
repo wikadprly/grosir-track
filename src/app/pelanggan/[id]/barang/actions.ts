@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { jakartaDateTime, jakartaTimeNow } from "@/lib/time";
 
 const productSelect = { id: true, name: true, defaultPrice: true } as const;
 
@@ -27,7 +28,7 @@ export async function createTransaction(
   const transaction = await prisma.transaction.create({
     data: {
       customerId,
-      date: new Date(date),
+      date: jakartaDateTime(date, jakartaTimeNow()),
       totalAmount,
       details: {
         create: items.map((item) => ({

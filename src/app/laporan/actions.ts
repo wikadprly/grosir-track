@@ -1,16 +1,17 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { JAKARTA_TIMEZONE, startOfJakartaMonth, startOfNextJakartaMonth } from "@/lib/time";
 
 export async function getLaporanData() {
   const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const startOfMonth = startOfJakartaMonth();
+  const endOfMonth = startOfNextJakartaMonth();
 
   // Total hutang masuk bulan ini
   const hutangBulanIni = await prisma.transaction.aggregate({
     where: {
-      date: { gte: startOfMonth, lte: endOfMonth },
+      date: { gte: startOfMonth, lt: endOfMonth },
     },
     _sum: { totalAmount: true },
   });
@@ -18,7 +19,7 @@ export async function getLaporanData() {
   // Total pembayaran bulan ini
   const pembayaranBulanIni = await prisma.payment.aggregate({
     where: {
-      date: { gte: startOfMonth, lte: endOfMonth },
+      date: { gte: startOfMonth, lt: endOfMonth },
     },
     _sum: { amount: true },
   });
@@ -48,7 +49,11 @@ export async function getLaporanData() {
     .sort((a, b) => b.hutang - a.hutang);
 
   return {
-    bulan: now.toLocaleDateString("id-ID", { month: "long", year: "numeric" }),
+    bulan: now.toLocaleDateString("id-ID", {
+      month: "long",
+      year: "numeric",
+      timeZone: JAKARTA_TIMEZONE,
+    }),
     totalHutang,
     totalPembayaran,
     sisaPiutang,

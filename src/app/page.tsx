@@ -1,12 +1,9 @@
 import { ReceiptText, ArrowDownToLine, Wallet, UserCircle2, Settings } from "lucide-react";
 import Link from "next/link";
 import { getDashboardData } from "./actions";
+import { formatRupiah } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-
-const formatRupiah = (angka: number) => {
-  return "Rp " + angka.toLocaleString("id-ID");
-};
 
 export default async function Beranda() {
   const data = await getDashboardData();

@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { JAKARTA_TIMEZONE, jakartaDateKey, jakartaTimeShort } from "@/lib/time";
 
 export async function getCustomerDetail(id: string) {
   const customer = await prisma.customer.findUnique({
@@ -54,12 +55,7 @@ export async function getCustomerDetail(id: string) {
   const totalPembayaran = customer.payments.reduce((sum, p) => sum + p.amount, 0);
   const sisaHutang = totalTransaksi - totalPembayaran;
 
-  const dateKey = (d: Date) => {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  };
+  const dateKey = jakartaDateKey;
 
   interface FlatEntry {
     id: number;
@@ -94,14 +90,13 @@ export async function getCustomerDetail(id: string) {
       day: "numeric",
       month: "long",
       year: "numeric",
+      timeZone: JAKARTA_TIMEZONE,
     });
 
     const flatEntries: FlatEntry[] = [];
 
     for (const entry of entries) {
-      const h = String(entry.tanggal.getHours()).padStart(2, "0");
-      const m = String(entry.tanggal.getMinutes()).padStart(2, "0");
-      const jam = `${h}.${m}`;
+      const jam = jakartaTimeShort(entry.tanggal);
 
       if (entry.jenis === "barang") {
         runningBalance += entry.total;

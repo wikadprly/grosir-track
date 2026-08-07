@@ -4,10 +4,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Plus, Pencil, Trash2, X, Check } from "lucide-react";
 import Link from "next/link";
 import { getProductsList, addProduct, updateProduct, deleteProduct } from "./actions";
-
-function formatRupiah(angka: number) {
-  return "Rp " + angka.toLocaleString("id-ID");
-}
+import { formatRupiah } from "@/lib/format";
 
 interface Product {
   id: string;

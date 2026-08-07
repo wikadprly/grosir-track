@@ -1,11 +1,8 @@
 import { TrendingUp, TrendingDown, Download } from "lucide-react";
 import { getLaporanData } from "./actions";
+import { formatRupiah } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-
-function formatRupiah(angka: number) {
-  return "Rp " + angka.toLocaleString("id-ID");
-}
 
 export default async function LaporanPage() {
   const data = await getLaporanData();

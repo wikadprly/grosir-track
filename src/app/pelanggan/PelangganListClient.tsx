@@ -3,10 +3,7 @@
 import { useState } from "react";
 import { Search, ChevronRight } from "lucide-react";
 import Link from "next/link";
-
-const formatRupiah = (angka: number) => {
-  return new Intl.NumberFormat("id-ID").format(angka);
-};
+import { formatRupiah } from "@/lib/format";
 
 interface Pelanggan {
   id: string;
@@ -68,7 +65,7 @@ export default function PelangganListClient({ initial }: Props) {
                   </span>
                 ) : (
                   <span className="text-[15px] font-bold text-[#e65c5c]">
-                    Rp {formatRupiah(pelanggan.saldo)}
+                    {formatRupiah(pelanggan.saldo)}
                   </span>
                 )}
                 <ChevronRight size={20} className="text-gray-400" />
