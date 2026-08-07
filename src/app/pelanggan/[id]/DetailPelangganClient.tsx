@@ -15,6 +15,7 @@ interface FlatEntry {
   total?: number;
   nominal?: number;
   sisa: number;
+  kembalian?: number;
   jam?: string;
 }
 
@@ -68,11 +69,15 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
         </button>
       </div>
 
-      {/* Total Sisa Hutang */}
+      {/* Status Sisa Saat Ini */}
       <div className="px-5 mb-4">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex justify-between items-center">
-          <span className="text-[15px] text-gray-500 font-medium">Total Sisa Hutang</span>
-          <span className={`text-xl font-bold ${sisaHutang > 0 ? "text-[#e65c5c]" : "text-[#20a049]"}`}>
+        <div
+          className={`rounded-2xl p-5 shadow-sm border flex justify-between items-center ${
+            sisaHutang > 0 ? "bg-white border-red-100" : "bg-[#f0faf3] border-green-100"
+          }`}
+        >
+          <span className="text-[15px] text-gray-500 font-medium">Sisa</span>
+          <span className={`text-2xl font-extrabold ${sisaHutang > 0 ? "text-[#e65c5c]" : "text-[#20a049]"}`}>
             {sisaHutang > 0 ? formatRupiah(sisaHutang) : "LUNAS"}
           </span>
         </div>
@@ -109,10 +114,18 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
                           </span>
                         </div>
                       </div>
-                      <div className="flex justify-between text-[14px] font-bold pl-10">
+                      <div className="flex justify-between text-[14px] font-bold pl-10 mt-1">
                         <span className="text-gray-900">Sisa</span>
-                        <span className="text-[#e65c5c]">{formatRupiah(entry.sisa)}</span>
+                        <span className={entry.sisa > 0 ? "text-[#e65c5c]" : "text-[#20a049]"}>
+                          {entry.sisa > 0 ? formatRupiah(entry.sisa) : "LUNAS"}
+                        </span>
                       </div>
+                      {entry.kembalian ? (
+                        <div className="flex justify-between text-[13px] font-semibold pl-10 mt-0.5">
+                          <span className="text-gray-500">Kembalian</span>
+                          <span className="text-[#20a049]">{formatRupiah(entry.kembalian)}</span>
+                        </div>
+                      ) : null}
                     </>
                   ) : (
                     <>
@@ -142,9 +155,11 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
                           </div>
                         ))}
                       </div>
-                      <div className="flex justify-between text-[14px] font-bold pl-10 mt-3">
+                      <div className="flex justify-between text-[14px] font-bold pl-10 mt-2">
                         <span className="text-gray-900">Sisa</span>
-                        <span className="text-[#e65c5c]">{formatRupiah(entry.sisa)}</span>
+                        <span className={entry.sisa > 0 ? "text-[#e65c5c]" : "text-[#20a049]"}>
+                          {entry.sisa > 0 ? formatRupiah(entry.sisa) : "LUNAS"}
+                        </span>
                       </div>
                     </>
                   )}
@@ -246,7 +261,7 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, sisa
                 </div>
                 <div>
                   <h3 className="font-bold text-gray-900 text-[17px]">Catat Nitip (Pembayaran)</h3>
-                  <p className="text-[14px] text-gray-500 mt-0.5">Catat pembayaran / pengurangan hutang</p>
+                  <p className="text-[14px] text-gray-500 mt-0.5">Catat pembayaran / nitip</p>
                 </div>
               </button>
             </div>

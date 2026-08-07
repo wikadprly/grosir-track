@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Buku Bon Ibu",
-  description: "Aplikasi pencatatan hutang pelanggan khusus untuk Ibu.",
+  description: "Aplikasi pencatatan bon pelanggan khusus untuk Ibu.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

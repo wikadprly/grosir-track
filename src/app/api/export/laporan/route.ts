@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import ExcelJS from "exceljs";
 import { formatRupiah } from "@/lib/format";
 import { JAKARTA_TIMEZONE, jakartaDateKey, startOfJakartaMonth, startOfNextJakartaMonth } from "@/lib/time";
+import { computeSisaBalance, type BalanceEntry } from "@/lib/balance";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,8 @@ export async function GET() {
       }),
       prisma.customer.findMany({
         include: {
-          transactions: { select: { totalAmount: true } },
-          payments: { select: { amount: true } },
+          transactions: { select: { totalAmount: true, date: true } },
+          payments: { select: { amount: true, date: true } },
         },
         orderBy: { name: "asc" },
       }),
@@ -63,28 +64,33 @@ export async function GET() {
     { header: "Nilai", key: "nilai", width: 25 },
   ];
   wsRingkasan.addRow({ label: `Bulan ${judulBulan}`, nilai: "" });
-  wsRingkasan.addRow({ label: "Total Hutang Masuk", nilai: formatRupiah(totalHutang) });
+  wsRingkasan.addRow({ label: "Total Belanja", nilai: formatRupiah(totalHutang) });
   wsRingkasan.addRow({ label: "Total Pembayaran", nilai: formatRupiah(totalPembayaran) });
-  wsRingkasan.addRow({ label: "Sisa Piutang", nilai: formatRupiah(sisaPiutang) });
+  wsRingkasan.addRow({ label: "Sisa", nilai: formatRupiah(sisaPiutang) });
   wsRingkasan.getRow(1).font = { bold: true };
 
-  // ── Sheet Piutang per Pelanggan ──
-  const wsPiutang = workbook.addWorksheet("Piutang Pelanggan");
+  // ── Sheet Sisa per Pelanggan ──
+  const wsPiutang = workbook.addWorksheet("Sisa Pelanggan");
   wsPiutang.columns = [
     { header: "Nama", key: "nama", width: 25 },
     { header: "Total Transaksi", key: "totalTransaksi", width: 20 },
     { header: "Total Bayar", key: "totalBayar", width: 20 },
-    { header: "Sisa Hutang", key: "sisa", width: 20 },
+    { header: "Sisa", key: "sisa", width: 20 },
   ];
   wsPiutang.getRow(1).font = { bold: true };
   for (const c of customers) {
     const totalTransaksi = c.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
     const totalBayar = c.payments.reduce((sum, p) => sum + p.amount, 0);
+    const entries: BalanceEntry[] = [
+      ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
+      ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
+    ];
+    const sisa = computeSisaBalance(entries);
     wsPiutang.addRow({
       nama: c.name,
       totalTransaksi: totalTransaksi,
       totalBayar: totalBayar,
-      sisa: totalTransaksi - totalBayar,
+      sisa: sisa,
     });
   }
 

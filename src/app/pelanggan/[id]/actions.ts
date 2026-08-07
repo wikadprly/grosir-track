@@ -51,10 +51,6 @@ export async function getCustomerDetail(id: string) {
 
   allEntries.sort((a, b) => a.tanggal.getTime() - b.tanggal.getTime());
 
-  const totalTransaksi = customer.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
-  const totalPembayaran = customer.payments.reduce((sum, p) => sum + p.amount, 0);
-  const sisaHutang = totalTransaksi - totalPembayaran;
-
   const dateKey = jakartaDateKey;
 
   interface FlatEntry {
@@ -65,6 +61,7 @@ export async function getCustomerDetail(id: string) {
     total?: number;
     nominal?: number;
     sisa: number;
+    kembalian?: number;
     jam?: string;
   }
 
@@ -110,13 +107,20 @@ export async function getCustomerDetail(id: string) {
           jam,
         });
       } else {
-        runningBalance -= entry.nominal;
+        let kembalian = 0;
+        if (entry.nominal > runningBalance) {
+          kembalian = entry.nominal - runningBalance;
+          runningBalance = 0;
+        } else {
+          runningBalance -= entry.nominal;
+        }
         flatEntries.push({
           id: idx++,
           dbId: entry.dbId,
           jenis: "nitip",
           nominal: entry.nominal,
           sisa: runningBalance,
+          kembalian,
           jam,
         });
       }
@@ -131,7 +135,7 @@ export async function getCustomerDetail(id: string) {
 
   return {
     nama: customer.name,
-    sisaHutang,
+    sisaHutang: runningBalance,
     riwayatHari: grouped,
   };
 }

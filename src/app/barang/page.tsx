@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Plus, Pencil, Trash2, X, Check } from "lucide-react";
-import Link from "next/link";
+import { Plus, Pencil, Trash2, X, Check, Search } from "lucide-react";
 import { getProductsList, addProduct, updateProduct, deleteProduct } from "./actions";
 import { formatRupiah } from "@/lib/format";
 
@@ -14,11 +13,16 @@ interface Product {
 
 export default function BarangPage() {
   const [daftarBarang, setDaftarBarang] = useState<Product[]>([]);
+  const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [namaBarang, setNamaBarang] = useState("");
   const [harga, setHarga] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const daftarTampil = query.trim()
+    ? daftarBarang.filter((b) => b.name.toLowerCase().includes(query.trim().toLowerCase()))
+    : daftarBarang;
 
   const loadProducts = async () => {
     const products = await getProductsList();
@@ -83,21 +87,40 @@ export default function BarangPage() {
   return (
     <main className="min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 pt-8 pb-4 bg-[#faf9f7] sticky top-0 z-20 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="p-2 -ml-2 active:bg-gray-100 rounded-xl transition-colors">
-            <ArrowLeft size={24} className="text-gray-600" />
-          </Link>
-          <h1 className="text-xl font-bold text-gray-900">Kelola Barang</h1>
-        </div>
+      <div className="flex justify-between items-center px-5 pt-8 pb-5">
+        <h1 className="text-3xl font-bold text-gray-900">Kelola Barang</h1>
       </div>
+
+      {/* Cari Barang */}
+      {!loading && (
+        <div className="px-5 mt-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Search size={20} className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cari barang..."
+              className="block w-full pl-11 pr-4 py-3.5 border border-gray-200 rounded-2xl bg-white placeholder-gray-400 focus:outline-none focus:border-[#e65c5c] focus:ring-1 focus:ring-[#e65c5c] text-base transition-all shadow-sm"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Daftar Barang */}
       {loading ? (
         <div className="px-5 text-center text-gray-400 mt-10">Memuat data...</div>
+      ) : daftarBarang.length === 0 ? (
+        <div className="px-5 text-center text-gray-400 mt-10">Belum ada barang</div>
+      ) : daftarTampil.length === 0 ? (
+        <div className="px-5 text-center text-gray-400 mt-10">
+          Barang tidak ditemukan untuk {query.trim()}
+        </div>
       ) : (
         <div className="px-5 mt-4 space-y-3">
-          {daftarBarang.map((b) => (
+          {daftarTampil.map((b) => (
             <div
               key={b.id}
               className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border border-gray-100"

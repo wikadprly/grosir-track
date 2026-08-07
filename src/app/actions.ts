@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { startOfJakartaDay, endOfJakartaDay } from "@/lib/time";
+import { computeSisaBalance, type BalanceEntry } from "@/lib/balance";
 
 export async function getDashboardData() {
   const startOfDay = startOfJakartaDay();
@@ -26,16 +27,18 @@ export async function getDashboardData() {
     // Total piutang semua pelanggan
     const allCustomers = await prisma.customer.findMany({
       include: {
-        transactions: { select: { totalAmount: true } },
-        payments: { select: { amount: true } },
+        transactions: { select: { totalAmount: true, date: true } },
+        payments: { select: { amount: true, date: true } },
       },
     });
 
     let totalPiutang = 0;
     for (const c of allCustomers) {
-      const totalTransaksi = c.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
-      const totalPembayaran = c.payments.reduce((sum, p) => sum + p.amount, 0);
-      totalPiutang += totalTransaksi - totalPembayaran;
+      const entries: BalanceEntry[] = [
+        ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
+        ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
+      ];
+      totalPiutang += computeSisaBalance(entries);
     }
 
     // 3 pelanggan terakhir yang bertransaksi (1 query aja)
@@ -43,14 +46,16 @@ export async function getDashboardData() {
       where: { transactions: { some: {} } },
       include: {
         transactions: { select: { totalAmount: true, date: true } },
-        payments: { select: { amount: true } },
+        payments: { select: { amount: true, date: true } },
       },
     }).then((customers) =>
       customers
         .map((c) => {
-          const totalTransaksi = c.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
-          const totalPembayaran = c.payments.reduce((sum, p) => sum + p.amount, 0);
-          const saldo = totalTransaksi - totalPembayaran;
+          const entries: BalanceEntry[] = [
+            ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
+            ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
+          ];
+          const saldo = computeSisaBalance(entries);
           const transaksiTerakhir = c.transactions.reduce(
             (latest, t) => (t.date > latest ? t.date : latest),
             new Date(0)

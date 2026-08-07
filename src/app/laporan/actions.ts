@@ -2,6 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { JAKARTA_TIMEZONE, startOfJakartaMonth, startOfNextJakartaMonth } from "@/lib/time";
+import { computeSisaBalance, type BalanceEntry } from "@/lib/balance";
 
 export async function getLaporanData() {
   const now = new Date();
@@ -31,18 +32,20 @@ export async function getLaporanData() {
   // Top pelanggan berhutang
   const allCustomers = await prisma.customer.findMany({
     include: {
-      transactions: { select: { totalAmount: true } },
-      payments: { select: { amount: true } },
+      transactions: { select: { totalAmount: true, date: true } },
+      payments: { select: { amount: true, date: true } },
     },
   });
 
   const denganHutang = allCustomers
     .map((c) => {
-      const totalTransaksi = c.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
-      const totalBayar = c.payments.reduce((sum, p) => sum + p.amount, 0);
+      const entries: BalanceEntry[] = [
+        ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
+        ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
+      ];
       return {
         name: c.name,
-        hutang: totalTransaksi - totalBayar,
+        hutang: computeSisaBalance(entries),
       };
     })
     .filter((c) => c.hutang > 0)

@@ -50,7 +50,7 @@ export default async function Beranda() {
             <div className="flex justify-between items-center py-1">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-red-50 rounded-xl text-red-500"><Wallet size={24} /></div>
-                <span className="text-base font-medium text-gray-700">Total Piutang</span>
+                <span className="text-base font-medium text-gray-700">Total Sisa</span>
               </div>
               <span className="font-bold text-[#d9534f] text-xl">{formatRupiah(data.totalPiutang)}</span>
             </div>
