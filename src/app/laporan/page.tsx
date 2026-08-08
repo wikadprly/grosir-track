@@ -8,9 +8,9 @@ export default async function LaporanPage() {
   const data = await getLaporanData();
 
   const bulanIni = [
-    { label: "Total Belanja", value: data.totalHutang, icon: TrendingUp, color: "text-[#d9534f]", bg: "bg-red-50" },
-    { label: "Total Pembayaran", value: data.totalPembayaran, icon: TrendingDown, color: "text-green-500", bg: "bg-green-50" },
-    { label: "Sisa", value: data.sisaPiutang, icon: TrendingUp, color: "text-orange-500", bg: "bg-orange-50" },
+    { label: "Total Belanja Bulan Ini", value: data.totalHutang, icon: TrendingUp, color: "text-[#d9534f]", bg: "bg-red-50" },
+    { label: "Total Pembayaran Bulan Ini", value: data.totalPembayaran, icon: TrendingDown, color: "text-green-500", bg: "bg-green-50" },
+    { label: "Total Sisa Piutang", value: data.sisaPiutang, icon: TrendingUp, color: "text-orange-500", bg: "bg-orange-50" },
   ];
 
   return (

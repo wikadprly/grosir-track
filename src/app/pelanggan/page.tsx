@@ -4,7 +4,7 @@ import { getCustomers } from "./actions";
 import PelangganListClient from "./PelangganListClient";
 
 export default async function PelangganPage() {
-  const daftarPelanggan = await getCustomers();
+  const { items, total } = await getCustomers();
 
   return (
     <main className="min-h-screen bg-[#faf9f7] pb-24">
@@ -19,7 +19,7 @@ export default async function PelangganPage() {
         </Link>
       </div>
 
-      <PelangganListClient initial={daftarPelanggan} />
+      <PelangganListClient initial={items} initialTotal={total} />
     </main>
   );
 }

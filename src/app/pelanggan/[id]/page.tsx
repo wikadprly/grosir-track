@@ -17,7 +17,6 @@ export default async function DetailPelangganPage({ params }: { params: Promise<
     <DetailPelangganClient
       pelangganId={id}
       namaPelanggan={data.nama}
-      sisaHutang={data.sisaHutang}
       riwayatHari={data.riwayatHari}
     />
   );

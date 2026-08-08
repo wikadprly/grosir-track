@@ -88,284 +88,190 @@ async function main() {
   await prisma.transaction.deleteMany();
   await prisma.payment.deleteMany();
 
-  // === BU ITO ===
-  // Transaksi 1 (1 Juli 2025)
-  const t1ito = await prisma.transaction.create({
-    data: {
-      id: "t-ito-1",
-      customerId: "c-ito",
-      totalAmount: 1078000,
-      date: new Date("2025-07-01T08:00:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-ito-1-1", transactionId: t1ito.id, productId: "p-50kgberas", qty: 1, priceAtThatTime: 650000, subtotal: 650000 },
-      { id: "td-ito-1-2", transactionId: t1ito.id, productId: "p-abcsusu", qty: 1, priceAtThatTime: 197000, subtotal: 197000 },
-      { id: "td-ito-1-3", transactionId: t1ito.id, productId: "p-50benang", qty: 1, priceAtThatTime: 65000, subtotal: 65000 },
-      { id: "td-ito-1-4", transactionId: t1ito.id, productId: "p-goodday", qty: 5, priceAtThatTime: 17000, subtotal: 85000 },
-      { id: "td-ito-1-5", transactionId: t1ito.id, productId: "p-gas3kg", qty: 2, priceAtThatTime: 22000, subtotal: 44000 },
-      { id: "td-ito-1-6", transactionId: t1ito.id, productId: "p-rokok1", qty: 1, priceAtThatTime: 22000, subtotal: 22000 },
-      { id: "td-ito-1-7", transactionId: t1ito.id, productId: "p-gulapasir", qty: 1, priceAtThatTime: 15000, subtotal: 15000 },
-    ],
-  });
+  type DetailDef = { productId: string; qty: number };
+  type EntryDef =
+    | { kind: "barang"; id: string; customerId: string; date: string; details: DetailDef[] }
+    | { kind: "nitip"; id: string; customerId: string; date: string; amount: number; note?: string };
 
-  // Transaksi 2 (7 Juli 2025)
-  const t2ito = await prisma.transaction.create({
-    data: {
-      id: "t-ito-2",
-      customerId: "c-ito",
-      totalAmount: 1183000,
-      date: new Date("2025-07-07T09:00:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-ito-2-1", transactionId: t2ito.id, productId: "p-50benang", qty: 1, priceAtThatTime: 65000, subtotal: 65000 },
-      { id: "td-ito-2-2", transactionId: t2ito.id, productId: "p-abcsusu", qty: 1, priceAtThatTime: 197000, subtotal: 197000 },
-      { id: "td-ito-2-3", transactionId: t2ito.id, productId: "p-goodday", qty: 1, priceAtThatTime: 17000, subtotal: 17000 },
-      { id: "td-ito-2-4", transactionId: t2ito.id, productId: "p-30gula", qty: 1, priceAtThatTime: 904000, subtotal: 904000 },
-    ],
-  });
+  const hargaOf = (id: string) => products.find((p) => p.id === id)!.defaultPrice;
 
-  // Pembayaran (11 Juli 2025)
-  await prisma.payment.create({
-    data: {
-      id: "pay-ito-1",
-      customerId: "c-ito",
-      amount: 1500000,
-      date: new Date("2025-07-11T10:00:00.000Z"),
-      note: "Bayar sebagian",
-    },
-  });
+  // Data disebar dari April s.d. Agustus 2026 agar terlihat hidup.
+  const entries: EntryDef[] = [
+    // ── BU ITO (rajin belanja, sisa ~1,1 jt) ──
+    { kind: "barang", id: "t-ito-1", customerId: "c-ito", date: "2026-05-04T15:00:00+07:00", details: [
+      { productId: "p-50kgberas", qty: 1 }, { productId: "p-abcsusu", qty: 1 }, { productId: "p-50benang", qty: 1 },
+      { productId: "p-goodday", qty: 5 }, { productId: "p-gas3kg", qty: 2 }, { productId: "p-rokok1", qty: 1 },
+      { productId: "p-gulapasir", qty: 1 },
+    ] },
+    { kind: "barang", id: "t-ito-2", customerId: "c-ito", date: "2026-05-11T16:00:00+07:00", details: [
+      { productId: "p-50benang", qty: 1 }, { productId: "p-abcsusu", qty: 1 }, { productId: "p-goodday", qty: 1 },
+      { productId: "p-30gula", qty: 1 },
+    ] },
+    { kind: "nitip", id: "pay-ito-1", customerId: "c-ito", date: "2026-05-19T17:00:00+07:00", amount: 1000000, note: "Bayar sebagian" },
+    { kind: "barang", id: "t-ito-3", customerId: "c-ito", date: "2026-06-08T15:00:00+07:00", details: [
+      { productId: "p-50kgberas", qty: 1 }, { productId: "p-sajiku", qty: 1 },
+    ] },
+    { kind: "nitip", id: "pay-ito-2", customerId: "c-ito", date: "2026-06-22T16:00:00+07:00", amount: 800000, note: "Bayar sebagian" },
+    { kind: "barang", id: "t-ito-4", customerId: "c-ito", date: "2026-07-06T15:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 2 }, { productId: "p-minyakkita", qty: 2 }, { productId: "p-gulapasir", qty: 2 },
+      { productId: "p-abcsusu", qty: 1 },
+    ] },
+    { kind: "nitip", id: "pay-ito-3", customerId: "c-ito", date: "2026-07-20T17:00:00+07:00", amount: 700000, note: "Bayar sebagian" },
+    { kind: "barang", id: "t-ito-5", customerId: "c-ito", date: "2026-07-29T15:30:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 1 }, { productId: "p-abcsusu", qty: 1 }, { productId: "p-rokok1", qty: 1 },
+      { productId: "p-gas3kg", qty: 1 }, { productId: "p-minyakkita", qty: 1 },
+    ] },
+    { kind: "nitip", id: "pay-ito-4", customerId: "c-ito", date: "2026-08-05T16:00:00+07:00", amount: 500000, note: "Bayar sebagian" },
 
-  // Transaksi 3 (13 Juli 2025)
-  const t3ito = await prisma.transaction.create({
-    data: {
-      id: "t-ito-3",
-      customerId: "c-ito",
-      totalAmount: 936500,
-      date: new Date("2025-07-13T08:30:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-ito-3-1", transactionId: t3ito.id, productId: "p-50kgberas", qty: 1, priceAtThatTime: 650000, subtotal: 650000 },
-      { id: "td-ito-3-2", transactionId: t3ito.id, productId: "p-sajiku", qty: 1, priceAtThatTime: 286500, subtotal: 286500 },
-    ],
-  });
-  // Total hutang Bu Ito: 1078000 + 1183000 - 1500000 + 936500 = 1697500 ✓
+    // ── PAK AGUS (pembeli besar, sisa ~1,5 jt) ──
+    { kind: "barang", id: "t-agus-1", customerId: "c-agus", date: "2026-04-10T09:00:00+07:00", details: [
+      { productId: "p-50kgberas", qty: 2 }, { productId: "p-minyakkita", qty: 3 }, { productId: "p-gulapasir", qty: 3 },
+      { productId: "p-abckopi", qty: 5 }, { productId: "p-rokok1", qty: 1 }, { productId: "p-gas3kg", qty: 1 },
+    ] },
+    { kind: "nitip", id: "pay-agus-1", customerId: "c-agus", date: "2026-05-02T10:00:00+07:00", amount: 1000000, note: "Bayar sebagian" },
+    { kind: "barang", id: "t-agus-2", customerId: "c-agus", date: "2026-06-06T09:30:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 3 }, { productId: "p-minyakkita", qty: 3 }, { productId: "p-gulapasir", qty: 3 },
+      { productId: "p-rokok1", qty: 2 },
+    ] },
+    { kind: "nitip", id: "pay-agus-2", customerId: "c-agus", date: "2026-07-03T11:00:00+07:00", amount: 1000000, note: "Bayar sebagian" },
+    { kind: "barang", id: "t-agus-3", customerId: "c-agus", date: "2026-07-22T09:00:00+07:00", details: [
+      { productId: "p-abckopi", qty: 3 }, { productId: "p-abcsusu", qty: 1 }, { productId: "p-50kgberas", qty: 1 },
+    ] },
 
-  // === PAK AGUS ===
-  const t1agus = await prisma.transaction.create({
-    data: {
-      id: "t-agus-1",
-      customerId: "c-agus",
-      totalAmount: 2400000,
-      date: new Date("2025-07-05T09:00:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-agus-1-1", transactionId: t1agus.id, productId: "p-50kgberas", qty: 2, priceAtThatTime: 650000, subtotal: 1300000 },
-      { id: "td-agus-1-2", transactionId: t1agus.id, productId: "p-minyakkita", qty: 3, priceAtThatTime: 34000, subtotal: 102000 },
-      { id: "td-agus-1-3", transactionId: t1agus.id, productId: "p-gulapasir", qty: 3, priceAtThatTime: 30000, subtotal: 90000 },
-      { id: "td-agus-1-4", transactionId: t1agus.id, productId: "p-abckopi", qty: 5, priceAtThatTime: 175000, subtotal: 875000 },
-      { id: "td-agus-1-5", transactionId: t1agus.id, productId: "p-rokok1", qty: 1, priceAtThatTime: 22000, subtotal: 22000 },
-      { id: "td-agus-1-6", transactionId: t1agus.id, productId: "p-gas3kg", qty: 1, priceAtThatTime: 22000, subtotal: 22000 },
-    ],
-  });
+    // ── BU MAR (sisa kecil ~150 rb) ──
+    { kind: "barang", id: "t-mar-1", customerId: "c-mar", date: "2026-04-08T10:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 3 }, { productId: "p-minyakkita", qty: 2 }, { productId: "p-sabun1", qty: 8 },
+      { productId: "p-teh1", qty: 5 }, { productId: "p-goodtime", qty: 2 },
+    ] },
+    { kind: "nitip", id: "pay-mar-1", customerId: "c-mar", date: "2026-05-14T10:00:00+07:00", amount: 300000, note: "Bayar sebagian" },
+    { kind: "barang", id: "t-mar-2", customerId: "c-mar", date: "2026-06-18T10:30:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 2 }, { productId: "p-sabun1", qty: 6 }, { productId: "p-teh1", qty: 4 },
+    ] },
+    { kind: "nitip", id: "pay-mar-2", customerId: "c-mar", date: "2026-07-15T11:00:00+07:00", amount: 400000, note: "Bayar sebagian" },
 
-  // === BU MAR (hutang 520.000) ===
-  const t1mar = await prisma.transaction.create({
-    data: {
-      id: "t-mar-1",
-      customerId: "c-mar",
-      totalAmount: 520000,
-      date: new Date("2025-07-08T10:00:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-mar-1-1", transactionId: t1mar.id, productId: "p-beras10kg", qty: 3, priceAtThatTime: 120000, subtotal: 360000 },
-      { id: "td-mar-1-2", transactionId: t1mar.id, productId: "p-minyakkita", qty: 2, priceAtThatTime: 34000, subtotal: 68000 },
-      { id: "td-mar-1-3", transactionId: t1mar.id, productId: "p-sabun1", qty: 8, priceAtThatTime: 4000, subtotal: 32000 },
-      { id: "td-mar-1-4", transactionId: t1mar.id, productId: "p-teh1", qty: 5, priceAtThatTime: 8000, subtotal: 40000 },
-      { id: "td-mar-1-5", transactionId: t1mar.id, productId: "p-goodtime", qty: 2, priceAtThatTime: 10000, subtotal: 20000 },
-    ],
-  });
+    // ── PAK JOKO (sisa ~480 rb) ──
+    { kind: "barang", id: "t-joko-1", customerId: "c-joko", date: "2026-04-03T08:00:00+07:00", details: [
+      { productId: "p-50kgberas", qty: 1 }, { productId: "p-beras10kg", qty: 2 }, { productId: "p-abcsusu", qty: 1 },
+      { productId: "p-rokok1", qty: 1 }, { productId: "p-gas3kg", qty: 1 }, { productId: "p-abckecap", qty: 3 },
+    ] },
+    { kind: "nitip", id: "pay-joko-1", customerId: "c-joko", date: "2026-05-10T09:00:00+07:00", amount: 600000, note: "Bayar sebagian" },
+    { kind: "barang", id: "t-joko-2", customerId: "c-joko", date: "2026-06-12T08:30:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 2 }, { productId: "p-minyakkita", qty: 3 }, { productId: "p-gulapasir", qty: 2 },
+    ] },
+    { kind: "nitip", id: "pay-joko-2", customerId: "c-joko", date: "2026-07-05T09:30:00+07:00", amount: 600000, note: "Bayar sebagian" },
 
-  // === PAK JOKO (hutang 1.200.000) ===
-  const t1joko = await prisma.transaction.create({
-    data: {
-      id: "t-joko-1",
-      customerId: "c-joko",
-      totalAmount: 1200000,
-      date: new Date("2025-07-03T08:00:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-joko-1-1", transactionId: t1joko.id, productId: "p-50kgberas", qty: 1, priceAtThatTime: 650000, subtotal: 650000 },
-      { id: "td-joko-1-2", transactionId: t1joko.id, productId: "p-beras10kg", qty: 2, priceAtThatTime: 120000, subtotal: 240000 },
-      { id: "td-joko-1-3", transactionId: t1joko.id, productId: "p-abcsusu", qty: 1, priceAtThatTime: 197000, subtotal: 197000 },
-      { id: "td-joko-1-4", transactionId: t1joko.id, productId: "p-rokok1", qty: 1, priceAtThatTime: 22000, subtotal: 22000 },
-      { id: "td-joko-1-5", transactionId: t1joko.id, productId: "p-gas3kg", qty: 1, priceAtThatTime: 22000, subtotal: 22000 },
-      { id: "td-joko-1-6", transactionId: t1joko.id, productId: "p-abckecap", qty: 3, priceAtThatTime: 28000, subtotal: 84000 },
-    ],
-  });
+    // ── BU SITI (sisa ~470 rb) ──
+    { kind: "barang", id: "t-siti-1", customerId: "c-siti", date: "2026-04-02T09:30:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 4 }, { productId: "p-minyakkita", qty: 3 }, { productId: "p-gulapasir", qty: 3 },
+      { productId: "p-sabun1", qty: 10 }, { productId: "p-teh1", qty: 5 }, { productId: "p-gooddaymocca", qty: 10 },
+      { productId: "p-abckecap", qty: 1 },
+    ] },
+    { kind: "nitip", id: "pay-siti-1", customerId: "c-siti", date: "2026-05-21T10:00:00+07:00", amount: 400000, note: "Bayar sebagian" },
+    { kind: "barang", id: "t-siti-2", customerId: "c-siti", date: "2026-06-25T09:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 2 }, { productId: "p-gulapasir", qty: 2 }, { productId: "p-teh1", qty: 6 },
+    ] },
+    { kind: "nitip", id: "pay-siti-2", customerId: "c-siti", date: "2026-07-16T10:30:00+07:00", amount: 400000, note: "Bayar sebagian" },
 
-  // === BU SITI (hutang 950.000) ===
-  const t1siti = await prisma.transaction.create({
-    data: {
-      id: "t-siti-1",
-      customerId: "c-siti",
-      totalAmount: 950000,
-      date: new Date("2025-07-02T09:30:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-siti-1-1", transactionId: t1siti.id, productId: "p-beras10kg", qty: 4, priceAtThatTime: 120000, subtotal: 480000 },
-      { id: "td-siti-1-2", transactionId: t1siti.id, productId: "p-minyakkita", qty: 3, priceAtThatTime: 34000, subtotal: 102000 },
-      { id: "td-siti-1-3", transactionId: t1siti.id, productId: "p-gulapasir", qty: 3, priceAtThatTime: 30000, subtotal: 90000 },
-      { id: "td-siti-1-4", transactionId: t1siti.id, productId: "p-sabun1", qty: 10, priceAtThatTime: 4000, subtotal: 40000 },
-      { id: "td-siti-1-5", transactionId: t1siti.id, productId: "p-teh1", qty: 5, priceAtThatTime: 8000, subtotal: 40000 },
-      { id: "td-siti-1-6", transactionId: t1siti.id, productId: "p-gooddaymocca", qty: 10, priceAtThatTime: 17000, subtotal: 170000 },
-      { id: "td-siti-1-7", transactionId: t1siti.id, productId: "p-abckecap", qty: 1, priceAtThatTime: 28000, subtotal: 28000 },
-    ],
-  });
+    // ── PAK DAR (lunas) ──
+    { kind: "barang", id: "t-dar-1", customerId: "c-dar", date: "2026-04-04T08:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 3 }, { productId: "p-minyakkita", qty: 2 }, { productId: "p-abcsusu", qty: 1 },
+      { productId: "p-rokok1", qty: 1 }, { productId: "p-gas3kg", qty: 1 }, { productId: "p-teh1", qty: 1 },
+    ] },
+    { kind: "nitip", id: "pay-dar-1", customerId: "c-dar", date: "2026-04-09T14:00:00+07:00", amount: 677000, note: "Lunas" },
+    { kind: "barang", id: "t-dar-2", customerId: "c-dar", date: "2026-06-07T08:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 3 }, { productId: "p-gulapasir", qty: 2 }, { productId: "p-goodday", qty: 4 },
+    ] },
+    { kind: "nitip", id: "pay-dar-2", customerId: "c-dar", date: "2026-06-10T14:00:00+07:00", amount: 488000, note: "Lunas" },
 
-  // === PAK DAR (lunas) ===
-  const t1dar = await prisma.transaction.create({
-    data: {
-      id: "t-dar-1",
-      customerId: "c-dar",
-      totalAmount: 677000,
-      date: new Date("2025-07-04T08:00:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-dar-1-1", transactionId: t1dar.id, productId: "p-beras10kg", qty: 3, priceAtThatTime: 120000, subtotal: 360000 },
-      { id: "td-dar-1-2", transactionId: t1dar.id, productId: "p-minyakkita", qty: 2, priceAtThatTime: 34000, subtotal: 68000 },
-      { id: "td-dar-1-3", transactionId: t1dar.id, productId: "p-abcsusu", qty: 1, priceAtThatTime: 197000, subtotal: 197000 },
-      { id: "td-dar-1-4", transactionId: t1dar.id, productId: "p-rokok1", qty: 1, priceAtThatTime: 22000, subtotal: 22000 },
-      { id: "td-dar-1-5", transactionId: t1dar.id, productId: "p-gas3kg", subtotal: 22000, priceAtThatTime: 22000, qty: 1 },
-      { id: "td-dar-1-6", transactionId: t1dar.id, productId: "p-teh1", subtotal: 8000, priceAtThatTime: 8000, qty: 1 },
-    ],
-  });
-  await prisma.payment.create({
-    data: {
-      id: "pay-dar-1",
-      customerId: "c-dar",
-      amount: 750000,
-      date: new Date("2025-07-06T14:00:00.000Z"),
-      note: "Lunas",
-    },
-  });
+    // ── BU RINA (sisa ~560 rb) ──
+    { kind: "barang", id: "t-rina-1", customerId: "c-rina", date: "2026-04-06T09:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 3 }, { productId: "p-minyakkita", qty: 3 }, { productId: "p-gulapasir", qty: 3 },
+      { productId: "p-sabun1", qty: 5 }, { productId: "p-abckopi", qty: 1 }, { productId: "p-goodday", qty: 1 },
+      { productId: "p-gas3kg", qty: 1 },
+    ] },
+    { kind: "nitip", id: "pay-rina-1", customerId: "c-rina", date: "2026-05-08T10:00:00+07:00", amount: 500000, note: "Bayar sebagian" },
+    { kind: "barang", id: "t-rina-2", customerId: "c-rina", date: "2026-07-12T09:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 2 }, { productId: "p-minyakkita", qty: 2 }, { productId: "p-sabun1", qty: 6 },
+    ] },
 
-  // === BU RINA (hutang 780.000) ===
-  const t1rina = await prisma.transaction.create({
-    data: {
-      id: "t-rina-1",
-      customerId: "c-rina",
-      totalAmount: 780000,
-      date: new Date("2025-07-06T09:00:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-rina-1-1", transactionId: t1rina.id, productId: "p-beras10kg", qty: 3, priceAtThatTime: 120000, subtotal: 360000 },
-      { id: "td-rina-1-2", transactionId: t1rina.id, productId: "p-minyakkita", qty: 3, priceAtThatTime: 34000, subtotal: 102000 },
-      { id: "td-rina-1-3", transactionId: t1rina.id, productId: "p-gulapasir", qty: 3, priceAtThatTime: 30000, subtotal: 90000 },
-      { id: "td-rina-1-4", transactionId: t1rina.id, productId: "p-sabun1", qty: 5, priceAtThatTime: 4000, subtotal: 20000 },
-      { id: "td-rina-1-5", transactionId: t1rina.id, productId: "p-abckopi", qty: 1, priceAtThatTime: 175000, subtotal: 175000 },
-      { id: "td-rina-1-6", transactionId: t1rina.id, productId: "p-goodday", qty: 1, priceAtThatTime: 17000, subtotal: 17000 },
-      { id: "td-rina-1-7", transactionId: t1rina.id, productId: "p-gas3kg", subtotal: 22000, priceAtThatTime: 22000, qty: 1 },
-    ],
-  });
+    // ── BU YANTI (lunas, rajin bayar) ──
+    { kind: "barang", id: "t-yanti-1", customerId: "c-yanti", date: "2026-04-07T08:30:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 2 }, { productId: "p-minyakkita", qty: 2 }, { productId: "p-gulapasir", qty: 3 },
+      { productId: "p-teh1", qty: 5 }, { productId: "p-sabun1", qty: 3 },
+    ] },
+    { kind: "nitip", id: "pay-yanti-1", customerId: "c-yanti", date: "2026-04-11T11:00:00+07:00", amount: 450000, note: "Lunas" },
+    { kind: "barang", id: "t-yanti-2", customerId: "c-yanti", date: "2026-06-20T08:30:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 2 }, { productId: "p-minyakkita", qty: 2 }, { productId: "p-gulapasir", qty: 2 },
+    ] },
+    { kind: "nitip", id: "pay-yanti-2", customerId: "c-yanti", date: "2026-06-24T11:00:00+07:00", amount: 368000, note: "Lunas" },
+    { kind: "barang", id: "t-yanti-3", customerId: "c-yanti", date: "2026-08-03T08:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 1 }, { productId: "p-gulapasir", qty: 2 }, { productId: "p-sabun1", qty: 4 },
+    ] },
+    { kind: "nitip", id: "pay-yanti-3", customerId: "c-yanti", date: "2026-08-04T11:00:00+07:00", amount: 196000, note: "Lunas" },
 
-  // === BU YANTI (lunas) ===
-  const t1yanti = await prisma.transaction.create({
-    data: {
-      id: "t-yanti-1",
-      customerId: "c-yanti",
-      totalAmount: 450000,
-      date: new Date("2025-07-07T08:30:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-yanti-1-1", transactionId: t1yanti.id, productId: "p-beras10kg", qty: 2, priceAtThatTime: 120000, subtotal: 240000 },
-      { id: "td-yanti-1-2", transactionId: t1yanti.id, productId: "p-minyakkita", qty: 2, priceAtThatTime: 34000, subtotal: 68000 },
-      { id: "td-yanti-1-3", transactionId: t1yanti.id, productId: "p-gulapasir", qty: 3, priceAtThatTime: 30000, subtotal: 90000 },
-      { id: "td-yanti-1-4", transactionId: t1yanti.id, productId: "p-teh1", subtotal: 40000, priceAtThatTime: 8000, qty: 5 },
-      { id: "td-yanti-1-5", transactionId: t1yanti.id, productId: "p-sabun1", subtotal: 12000, priceAtThatTime: 4000, qty: 3 },
-    ],
-  });
-  await prisma.payment.create({
-    data: {
-      id: "pay-yanti-1",
-      customerId: "c-yanti",
-      amount: 450000,
-      date: new Date("2025-07-09T11:00:00.000Z"),
-      note: "Lunas",
-    },
-  });
+    // ── PAK DEDI (sisa ~700 rb) ──
+    { kind: "barang", id: "t-dedi-1", customerId: "c-dedi", date: "2026-04-04T10:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 2 }, { productId: "p-minyakkita", qty: 2 }, { productId: "p-gulapasir", qty: 3 },
+      { productId: "p-abcsusu", qty: 1 }, { productId: "p-rokok1", qty: 1 }, { productId: "p-gas3kg", qty: 1 },
+    ] },
+    { kind: "nitip", id: "pay-dedi-1", customerId: "c-dedi", date: "2026-05-25T11:00:00+07:00", amount: 250000, note: "Bayar sebagian" },
+    { kind: "barang", id: "t-dedi-2", customerId: "c-dedi", date: "2026-07-18T10:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 2 }, { productId: "p-abcsusu", qty: 1 }, { productId: "p-gas3kg", qty: 1 },
+      { productId: "p-rokok1", qty: 2 },
+    ] },
 
-  // === PAK DEDI (hutang 650.000) ===
-  const t1dedi = await prisma.transaction.create({
-    data: {
-      id: "t-dedi-1",
-      customerId: "c-dedi",
-      totalAmount: 650000,
-      date: new Date("2025-07-04T10:00:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-dedi-1-1", transactionId: t1dedi.id, productId: "p-beras10kg", qty: 2, priceAtThatTime: 120000, subtotal: 240000 },
-      { id: "td-dedi-1-2", transactionId: t1dedi.id, productId: "p-minyakkita", qty: 2, priceAtThatTime: 34000, subtotal: 68000 },
-      { id: "td-dedi-1-3", transactionId: t1dedi.id, productId: "p-gulapasir", qty: 3, priceAtThatTime: 30000, subtotal: 90000 },
-      { id: "td-dedi-1-4", transactionId: t1dedi.id, productId: "p-abcsusu", qty: 1, priceAtThatTime: 197000, subtotal: 197000 },
-      { id: "td-dedi-1-5", transactionId: t1dedi.id, productId: "p-rokok1", subtotal: 22000, priceAtThatTime: 22000, qty: 1 },
-      { id: "td-dedi-1-6", transactionId: t1dedi.id, productId: "p-gas3kg", subtotal: 22000, priceAtThatTime: 22000, qty: 1 },
-    ],
-  });
+    // ── BU LILIS (lunas) ──
+    { kind: "barang", id: "t-lilis-1", customerId: "c-lilis", date: "2026-04-05T10:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 1 }, { productId: "p-minyakkita", qty: 2 }, { productId: "p-gulapasir", qty: 2 },
+      { productId: "p-teh1", qty: 3 }, { productId: "p-sabun1", qty: 5 }, { productId: "p-rokok1", qty: 1 },
+      { productId: "p-gas3kg", qty: 1 }, { productId: "p-abcsusu", qty: 1 },
+    ] },
+    { kind: "nitip", id: "pay-lilis-1", customerId: "c-lilis", date: "2026-04-09T14:00:00+07:00", amount: 533000, note: "Lunas" },
+    { kind: "barang", id: "t-lilis-2", customerId: "c-lilis", date: "2026-06-28T10:00:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 1 }, { productId: "p-minyakkita", qty: 2 }, { productId: "p-sabun1", qty: 4 },
+    ] },
+    { kind: "nitip", id: "pay-lilis-2", customerId: "c-lilis", date: "2026-07-01T14:00:00+07:00", amount: 204000, note: "Lunas" },
+    { kind: "barang", id: "t-lilis-3", customerId: "c-lilis", date: "2026-08-06T09:30:00+07:00", details: [
+      { productId: "p-beras10kg", qty: 1 }, { productId: "p-gulapasir", qty: 2 }, { productId: "p-teh1", qty: 3 },
+    ] },
+    { kind: "nitip", id: "pay-lilis-3", customerId: "c-lilis", date: "2026-08-06T11:00:00+07:00", amount: 204000, note: "Lunas" },
+  ];
 
-  // === BU LILIS (lunas) ===
-  const t1lilis = await prisma.transaction.create({
-    data: {
-      id: "t-lilis-1",
-      customerId: "c-lilis",
-      totalAmount: 533000,
-      date: new Date("2025-07-05T10:00:00.000Z"),
-    },
-  });
-  await prisma.transactionDetail.createMany({
-    data: [
-      { id: "td-lilis-1-1", transactionId: t1lilis.id, productId: "p-beras10kg", qty: 1, priceAtThatTime: 120000, subtotal: 120000 },
-      { id: "td-lilis-1-2", transactionId: t1lilis.id, productId: "p-minyakkita", qty: 2, priceAtThatTime: 34000, subtotal: 68000 },
-      { id: "td-lilis-1-3", transactionId: t1lilis.id, productId: "p-gulapasir", qty: 2, priceAtThatTime: 30000, subtotal: 60000 },
-      { id: "td-lilis-1-4", transactionId: t1lilis.id, productId: "p-teh1", subtotal: 24000, priceAtThatTime: 8000, qty: 3 },
-      { id: "td-lilis-1-5", transactionId: t1lilis.id, productId: "p-sabun1", subtotal: 20000, priceAtThatTime: 4000, qty: 5 },
-      { id: "td-lilis-1-6", transactionId: t1lilis.id, productId: "p-rokok1", subtotal: 22000, priceAtThatTime: 22000, qty: 1 },
-      { id: "td-lilis-1-7", transactionId: t1lilis.id, productId: "p-gas3kg", subtotal: 22000, priceAtThatTime: 22000, qty: 1 },
-      { id: "td-lilis-1-8", transactionId: t1lilis.id, productId: "p-abcsusu", subtotal: 197000, priceAtThatTime: 197000, qty: 1 },
-    ],
-  });
-  await prisma.payment.create({
-    data: {
-      id: "pay-lilis-1",
-      customerId: "c-lilis",
-      amount: 533000,
-      date: new Date("2025-07-08T14:00:00.000Z"),
-      note: "Lunas",
-    },
-  });
+  for (const e of entries) {
+    if (e.kind === "barang") {
+      const details = e.details.map((d, i) => ({
+        id: `${e.id}-d${i}`,
+        productId: d.productId,
+        qty: d.qty,
+        priceAtThatTime: hargaOf(d.productId),
+        subtotal: d.qty * hargaOf(d.productId),
+      }));
+      const totalAmount = details.reduce((s, d) => s + d.subtotal, 0);
+      const tx = await prisma.transaction.create({
+        data: {
+          id: e.id,
+          customerId: e.customerId,
+          totalAmount,
+          date: new Date(e.date),
+        },
+      });
+      await prisma.transactionDetail.createMany({
+        data: details.map((d) => ({ ...d, transactionId: tx.id })),
+      });
+    } else {
+      await prisma.payment.create({
+        data: {
+          id: e.id,
+          customerId: e.customerId,
+          amount: e.amount,
+          date: new Date(e.date),
+          note: e.note,
+        },
+      });
+    }
+  }
 
-  console.log("✓ All transactions, details, and payments created");
+  console.log(`✓ ${entries.length} transactions/payments created (April–Agustus 2026)`);
   console.log("Seeding completed!");
 }
 
@@ -375,5 +281,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await prisma["$disconnect"]();
   });

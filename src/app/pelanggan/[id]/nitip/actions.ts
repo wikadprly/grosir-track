@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { jakartaDateTime, jakartaTimeNow } from "@/lib/time";
+import { nextRecordTime } from "@/lib/recordTime";
 
 export async function createPayment(
   customerId: string,
@@ -10,11 +10,15 @@ export async function createPayment(
   date: string,
   note?: string
 ) {
+  if (!customerId) throw new Error("Pelanggan tidak valid");
+  if (!date) throw new Error("Tanggal harus diisi");
+  if (!Number.isInteger(amount) || amount <= 0) throw new Error("Nominal pembayaran tidak valid");
+
   const payment = await prisma.payment.create({
     data: {
       customerId,
       amount,
-      date: jakartaDateTime(date, jakartaTimeNow()),
+      date: await nextRecordTime(customerId, date),
       note: note || null,
     },
   });

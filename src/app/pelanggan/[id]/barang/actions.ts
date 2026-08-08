@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { jakartaDateTime, jakartaTimeNow } from "@/lib/time";
+import { nextRecordTime } from "@/lib/recordTime";
 
 const productSelect = { id: true, name: true, defaultPrice: true } as const;
 
@@ -23,12 +23,21 @@ export async function createTransaction(
   date: string,
   items: { productId: string; qty: number; harga: number }[]
 ) {
+  if (!customerId) throw new Error("Pelanggan tidak valid");
+  if (!date) throw new Error("Tanggal harus diisi");
+  if (!items || items.length === 0) throw new Error("Minimal satu barang harus dipilih");
+  for (const item of items) {
+    if (!item.productId) throw new Error("Barang tidak valid");
+    if (!Number.isInteger(item.qty) || item.qty <= 0) throw new Error("Jumlah barang tidak valid");
+    if (!Number.isFinite(item.harga) || item.harga <= 0) throw new Error("Harga tidak valid");
+  }
+
   const totalAmount = items.reduce((sum, item) => sum + item.harga * item.qty, 0);
 
   const transaction = await prisma.transaction.create({
     data: {
       customerId,
-      date: jakartaDateTime(date, jakartaTimeNow()),
+      date: await nextRecordTime(customerId, date),
       totalAmount,
       details: {
         create: items.map((item) => ({

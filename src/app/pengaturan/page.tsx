@@ -2,14 +2,24 @@ import { ArrowLeft, Package, Users, Database, FileOutput, FileInput, Shield, Inf
 import Link from "next/link";
 import { getUserProfile } from "./actions";
 
-const menuItems = [
+interface MenuItem {
+  href: string | null;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  desc: string;
+  color: string;
+  iconColor: string;
+  comingSoon?: boolean;
+}
+
+const menuItems: MenuItem[] = [
   { href: "/barang", icon: Package, label: "Data Barang", desc: "Kelola daftar barang & harga", color: "bg-[#fff5f5]", iconColor: "text-[#e65c5c]" },
   { href: "/pelanggan", icon: Users, label: "Data Pelanggan", desc: "Tambah, ubah, atau hapus pelanggan", color: "bg-blue-50", iconColor: "text-blue-500" },
-  { href: "#", icon: Database, label: "Backup Data", desc: "Cadangkan data ke cloud", color: "bg-green-50", iconColor: "text-green-500" },
-  { href: "#", icon: FileOutput, label: "Export Data", desc: "Excel / PDF", color: "bg-amber-50", iconColor: "text-amber-500" },
-  { href: "#", icon: FileInput, label: "Import Data", desc: "Pulihkan data backup", color: "bg-purple-50", iconColor: "text-purple-500" },
-  { href: "#", icon: Shield, label: "Keamanan", desc: "Ubah PIN aplikasi", color: "bg-red-50", iconColor: "text-[#d9534f]" },
-  { href: "#", icon: Info, label: "Tentang Aplikasi", desc: "Versi aplikasi & bantuan", color: "bg-gray-100", iconColor: "text-gray-500" },
+  { href: "/laporan", icon: FileOutput, label: "Export Laporan", desc: "Unduh laporan Excel bulan ini", color: "bg-amber-50", iconColor: "text-amber-500" },
+  { href: null, icon: Database, label: "Backup Data", desc: "Cadangkan data ke cloud", color: "bg-green-50", iconColor: "text-green-500", comingSoon: true },
+  { href: null, icon: FileInput, label: "Import Data", desc: "Pulihkan data backup", color: "bg-purple-50", iconColor: "text-purple-500", comingSoon: true },
+  { href: null, icon: Shield, label: "Keamanan", desc: "Ubah PIN aplikasi", color: "bg-red-50", iconColor: "text-[#d9534f]", comingSoon: true },
+  { href: null, icon: Info, label: "Tentang Aplikasi", desc: "Versi aplikasi & bantuan", color: "bg-gray-100", iconColor: "text-gray-500", comingSoon: true },
 ];
 
 export default async function PengaturanPage() {
@@ -41,24 +51,46 @@ export default async function PengaturanPage() {
 
       {/* Menu */}
       <div className="px-5 space-y-3">
-        {menuItems.map((item, idx) => (
-          <Link
-            key={idx}
-            href={item.href}
-            className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border border-gray-100 active:bg-gray-50 transition-colors"
-          >
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center`}>
-                <item.icon size={24} className={item.iconColor} />
+        {menuItems.map((item, idx) => {
+          const content = (
+            <>
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 ${item.color} rounded-xl flex items-center justify-center`}>
+                  <item.icon size={24} className={item.iconColor} />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-gray-800">{item.label}</p>
+                  <p className="text-sm text-gray-400">{item.desc}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-base font-bold text-gray-800">{item.label}</p>
-                <p className="text-sm text-gray-400">{item.desc}</p>
-              </div>
+              {item.comingSoon ? (
+                <span className="text-[11px] font-semibold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
+                  Segera hadir
+                </span>
+              ) : (
+                <ChevronRight size={20} className="text-gray-300" />
+              )}
+            </>
+          );
+
+          return item.href ? (
+            <Link
+              key={idx}
+              href={item.href}
+              className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border border-gray-100 active:bg-gray-50 transition-colors"
+            >
+              {content}
+            </Link>
+          ) : (
+            <div
+              key={idx}
+              aria-disabled
+              className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border border-gray-100 opacity-70"
+            >
+              {content}
             </div>
-            <ChevronRight size={20} className="text-gray-300" />
-          </Link>
-        ))}
+          );
+        })}
       </div>
     </main>
   );

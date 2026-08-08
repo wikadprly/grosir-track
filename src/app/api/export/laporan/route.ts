@@ -45,7 +45,14 @@ export async function GET() {
 
   const totalHutang = hutangBulanIni._sum.totalAmount ?? 0;
   const totalPembayaran = pembayaranBulanIni._sum.amount ?? 0;
-  const sisaPiutang = totalHutang - totalPembayaran;
+  // Total sisa piutang saat ini (semua periode), konsisten dengan dashboard & laporan
+  const sisaPiutang = customers.reduce((sum, c) => {
+    const entries: BalanceEntry[] = [
+      ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
+      ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
+    ];
+    return sum + computeSisaBalance(entries);
+  }, 0);
 
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Buku Bon Ibu";
@@ -64,9 +71,9 @@ export async function GET() {
     { header: "Nilai", key: "nilai", width: 25 },
   ];
   wsRingkasan.addRow({ label: `Bulan ${judulBulan}`, nilai: "" });
-  wsRingkasan.addRow({ label: "Total Belanja", nilai: formatRupiah(totalHutang) });
-  wsRingkasan.addRow({ label: "Total Pembayaran", nilai: formatRupiah(totalPembayaran) });
-  wsRingkasan.addRow({ label: "Sisa", nilai: formatRupiah(sisaPiutang) });
+  wsRingkasan.addRow({ label: "Total Belanja (Bulan Ini)", nilai: formatRupiah(totalHutang) });
+  wsRingkasan.addRow({ label: "Total Pembayaran (Bulan Ini)", nilai: formatRupiah(totalPembayaran) });
+  wsRingkasan.addRow({ label: "Total Sisa Piutang", nilai: formatRupiah(sisaPiutang) });
   wsRingkasan.getRow(1).font = { bold: true };
 
   // ── Sheet Sisa per Pelanggan ──

@@ -27,7 +27,6 @@ export async function getLaporanData() {
 
   const totalHutang = hutangBulanIni._sum.totalAmount ?? 0;
   const totalPembayaran = pembayaranBulanIni._sum.amount ?? 0;
-  const sisaPiutang = totalHutang - totalPembayaran;
 
   // Top pelanggan berhutang
   const allCustomers = await prisma.customer.findMany({
@@ -37,17 +36,21 @@ export async function getLaporanData() {
     },
   });
 
-  const denganHutang = allCustomers
-    .map((c) => {
-      const entries: BalanceEntry[] = [
-        ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
-        ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
-      ];
-      return {
-        name: c.name,
-        hutang: computeSisaBalance(entries),
-      };
-    })
+  const sisaPerPelanggan = allCustomers.map((c) => {
+    const entries: BalanceEntry[] = [
+      ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
+      ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
+    ];
+    return {
+      name: c.name,
+      hutang: computeSisaBalance(entries),
+    };
+  });
+
+  // Total sisa piutang saat ini (semua periode), konsisten dengan dashboard & export
+  const sisaPiutang = sisaPerPelanggan.reduce((sum, c) => sum + c.hutang, 0);
+
+  const denganHutang = sisaPerPelanggan
     .filter((c) => c.hutang > 0)
     .sort((a, b) => b.hutang - a.hutang);
 

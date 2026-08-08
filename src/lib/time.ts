@@ -57,6 +57,11 @@ export function jakartaDateKey(date: Date): string {
   return `${j.getUTCFullYear()}-${mm}-${dd}`;
 }
 
+export function jakartaDayRange(dateStr: string): { start: Date; end: Date } {
+  const start = jakartaDateTime(dateStr);
+  return { start, end: new Date(start.getTime() + 24 * 60 * 60 * 1000) };
+}
+
 export function jakartaTimeShort(date: Date): string {
   const j = shiftedToJakarta(date);
   const hh = String(j.getUTCHours()).padStart(2, "0");

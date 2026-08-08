@@ -49,7 +49,12 @@ export async function getCustomerDetail(id: string) {
     });
   }
 
-  allEntries.sort((a, b) => a.tanggal.getTime() - b.tanggal.getTime());
+  allEntries.sort((a, b) => {
+    const timeDiff = a.tanggal.getTime() - b.tanggal.getTime();
+    if (timeDiff !== 0) return timeDiff;
+    if (a.jenis === b.jenis) return 0;
+    return a.jenis === "barang" ? -1 : 1;
+  });
 
   const dateKey = jakartaDateKey;
 
@@ -135,7 +140,6 @@ export async function getCustomerDetail(id: string) {
 
   return {
     nama: customer.name,
-    sisaHutang: runningBalance,
     riwayatHari: grouped,
   };
 }
