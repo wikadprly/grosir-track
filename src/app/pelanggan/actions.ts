@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { computeSisaBalance, type BalanceEntry } from "@/lib/balance";
+import { getCustomerBalances } from "@/lib/balanceQuery";
 
 export async function createCustomer(name: string, phone?: string) {
   const trimmedName = name.trim();
@@ -44,26 +44,20 @@ export async function getCustomers(query = "", page = 1): Promise<CustomerListRe
     ? { name: { contains: q, mode: "insensitive" as const } }
     : undefined;
 
-  const [customers, total] = await Promise.all([
+  const [customers, total, balances] = await Promise.all([
     prisma.customer.findMany({
       where: nameFilter,
-      include: {
-        transactions: { select: { totalAmount: true, date: true } },
-        payments: { select: { amount: true, date: true } },
-      },
+      select: { id: true, name: true },
       orderBy: { name: "asc" },
       skip: (safePage - 1) * pageSize,
       take: pageSize,
     }),
     prisma.customer.count({ where: nameFilter }),
+    getCustomerBalances(),
   ]);
 
   const items: CustomerListItem[] = customers.map((c) => {
-    const entries: BalanceEntry[] = [
-      ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
-      ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
-    ];
-    const saldo = computeSisaBalance(entries);
+    const saldo = balances.get(c.id)?.saldo ?? 0;
     return {
       id: c.id,
       nama: c.name,

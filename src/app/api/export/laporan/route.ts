@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma";
 import ExcelJS from "exceljs";
 import { formatRupiah } from "@/lib/format";
 import { JAKARTA_TIMEZONE, jakartaDateKey, startOfJakartaMonth, startOfNextJakartaMonth } from "@/lib/time";
-import { computeSisaBalance, type BalanceEntry } from "@/lib/balance";
+import { getCustomerBalances } from "@/lib/balanceQuery";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,7 @@ export async function GET() {
   const startOfMonth = startOfJakartaMonth();
   const endOfMonth = startOfNextJakartaMonth();
 
-  const [hutangBulanIni, pembayaranBulanIni, customers, transactions, payments] =
+  const [hutangBulanIni, pembayaranBulanIni, txTotals, payTotals, customers, transactions, payments, balances] =
     await Promise.all([
       prisma.transaction.aggregate({
         where: { date: { gte: startOfMonth, lt: endOfMonth } },
@@ -21,11 +21,10 @@ export async function GET() {
         where: { date: { gte: startOfMonth, lt: endOfMonth } },
         _sum: { amount: true },
       }),
+      prisma.transaction.groupBy({ by: ["customerId"], _sum: { totalAmount: true } }),
+      prisma.payment.groupBy({ by: ["customerId"], _sum: { amount: true } }),
       prisma.customer.findMany({
-        include: {
-          transactions: { select: { totalAmount: true, date: true } },
-          payments: { select: { amount: true, date: true } },
-        },
+        select: { id: true, name: true },
         orderBy: { name: "asc" },
       }),
       prisma.transaction.findMany({
@@ -41,18 +40,19 @@ export async function GET() {
         include: { customer: { select: { name: true } } },
         orderBy: { date: "asc" },
       }),
+      getCustomerBalances(),
     ]);
+
+  const totalTransaksiByCustomer = new Map(txTotals.map((r) => [r.customerId, r._sum.totalAmount ?? 0]));
+  const totalBayarByCustomer = new Map(payTotals.map((r) => [r.customerId, r._sum.amount ?? 0]));
 
   const totalHutang = hutangBulanIni._sum.totalAmount ?? 0;
   const totalPembayaran = pembayaranBulanIni._sum.amount ?? 0;
   // Total sisa piutang saat ini (semua periode), konsisten dengan dashboard & laporan
-  const sisaPiutang = customers.reduce((sum, c) => {
-    const entries: BalanceEntry[] = [
-      ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
-      ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
-    ];
-    return sum + computeSisaBalance(entries);
-  }, 0);
+  let sisaPiutang = 0;
+  for (const c of customers) {
+    sisaPiutang += balances.get(c.id)?.saldo ?? 0;
+  }
 
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Buku Bon Ibu";
@@ -86,13 +86,9 @@ export async function GET() {
   ];
   wsPiutang.getRow(1).font = { bold: true };
   for (const c of customers) {
-    const totalTransaksi = c.transactions.reduce((sum, t) => sum + t.totalAmount, 0);
-    const totalBayar = c.payments.reduce((sum, p) => sum + p.amount, 0);
-    const entries: BalanceEntry[] = [
-      ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
-      ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
-    ];
-    const sisa = computeSisaBalance(entries);
+    const totalTransaksi = totalTransaksiByCustomer.get(c.id) ?? 0;
+    const totalBayar = totalBayarByCustomer.get(c.id) ?? 0;
+    const sisa = balances.get(c.id)?.saldo ?? 0;
     wsPiutang.addRow({
       nama: c.name,
       totalTransaksi: totalTransaksi,

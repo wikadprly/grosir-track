@@ -16,8 +16,8 @@ const menuItems: MenuItem[] = [
   { href: "/barang", icon: Package, label: "Data Barang", desc: "Kelola daftar barang & harga", color: "bg-[#fff5f5]", iconColor: "text-[#e65c5c]" },
   { href: "/pelanggan", icon: Users, label: "Data Pelanggan", desc: "Tambah, ubah, atau hapus pelanggan", color: "bg-blue-50", iconColor: "text-blue-500" },
   { href: "/laporan", icon: FileOutput, label: "Export Laporan", desc: "Unduh laporan Excel bulan ini", color: "bg-amber-50", iconColor: "text-amber-500" },
-  { href: null, icon: Database, label: "Backup Data", desc: "Cadangkan data ke cloud", color: "bg-green-50", iconColor: "text-green-500", comingSoon: true },
-  { href: null, icon: FileInput, label: "Import Data", desc: "Pulihkan data backup", color: "bg-purple-50", iconColor: "text-purple-500", comingSoon: true },
+  { href: "/pengaturan/backup", icon: Database, label: "Backup Data", desc: "Cadangkan semua data ke file", color: "bg-green-50", iconColor: "text-green-500" },
+  { href: "/pengaturan/import", icon: FileInput, label: "Import Data", desc: "Pulihkan data dari file backup", color: "bg-purple-50", iconColor: "text-purple-500" },
   { href: null, icon: Shield, label: "Keamanan", desc: "Ubah PIN aplikasi", color: "bg-red-50", iconColor: "text-[#d9534f]", comingSoon: true },
   { href: null, icon: Info, label: "Tentang Aplikasi", desc: "Versi aplikasi & bantuan", color: "bg-gray-100", iconColor: "text-gray-500", comingSoon: true },
 ];

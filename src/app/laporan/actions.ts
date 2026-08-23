@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { JAKARTA_TIMEZONE, startOfJakartaMonth, startOfNextJakartaMonth } from "@/lib/time";
-import { computeSisaBalance, type BalanceEntry } from "@/lib/balance";
+import { getCustomerBalances } from "@/lib/balanceQuery";
 
 export async function getLaporanData() {
   const now = new Date();
@@ -29,23 +29,15 @@ export async function getLaporanData() {
   const totalPembayaran = pembayaranBulanIni._sum.amount ?? 0;
 
   // Top pelanggan berhutang
-  const allCustomers = await prisma.customer.findMany({
-    include: {
-      transactions: { select: { totalAmount: true, date: true } },
-      payments: { select: { amount: true, date: true } },
-    },
-  });
+  const [customers, balances] = await Promise.all([
+    prisma.customer.findMany({ select: { id: true, name: true } }),
+    getCustomerBalances(),
+  ]);
 
-  const sisaPerPelanggan = allCustomers.map((c) => {
-    const entries: BalanceEntry[] = [
-      ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
-      ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
-    ];
-    return {
-      name: c.name,
-      hutang: computeSisaBalance(entries),
-    };
-  });
+  const sisaPerPelanggan = customers.map((c) => ({
+    name: c.name,
+    hutang: balances.get(c.id)?.saldo ?? 0,
+  }));
 
   // Total sisa piutang saat ini (semua periode), konsisten dengan dashboard & export
   const sisaPiutang = sisaPerPelanggan.reduce((sum, c) => sum + c.hutang, 0);

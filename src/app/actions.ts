@@ -2,74 +2,68 @@
 
 import prisma from "@/lib/prisma";
 import { startOfJakartaDay, endOfJakartaDay } from "@/lib/time";
-import { computeSisaBalance, type BalanceEntry } from "@/lib/balance";
+import { getCustomerBalances } from "@/lib/balanceQuery";
 
 export async function getDashboardData() {
   const startOfDay = startOfJakartaDay();
   const endOfDay = endOfJakartaDay();
 
-  try {
+  const [transaksiHariIni, pembayaranHariIni, customers, balances] = await Promise.all([
     // Transaksi hari ini
-    const transaksiHariIni = await prisma.transaction.count({
+    prisma.transaction.count({
       where: {
         date: { gte: startOfDay, lt: endOfDay },
       },
-    });
+    }),
 
     // Uang masuk hari ini (pembayaran)
-    const pembayaranHariIni = await prisma.payment.aggregate({
+    prisma.payment.aggregate({
       where: {
         date: { gte: startOfDay, lt: endOfDay },
       },
       _sum: { amount: true },
-    });
+    }),
 
-    // Total piutang semua pelanggan + 3 pelanggan terakhir (1 query aja)
-    const allCustomers = await prisma.customer.findMany({
-      include: {
-        transactions: { select: { totalAmount: true, date: true } },
-        payments: { select: { amount: true, date: true } },
-      },
-    });
+    prisma.customer.findMany({ select: { id: true, name: true } }),
 
-    let totalPiutang = 0;
-    const customerBalances = allCustomers.map((c) => {
-      const entries: BalanceEntry[] = [
-        ...c.transactions.map((t) => ({ kind: "barang" as const, amount: t.totalAmount, date: t.date })),
-        ...c.payments.map((p) => ({ kind: "nitip" as const, amount: p.amount, date: p.date })),
-      ];
-      const saldo = computeSisaBalance(entries);
-      const transaksiTerakhir = c.transactions.reduce(
-        (latest, t) => (t.date > latest ? t.date : latest),
-        new Date(0)
-      );
-      totalPiutang += saldo;
-      return { id: c.id, name: c.name, saldo, transaksiTerakhir };
-    });
+    // Saldo semua pelanggan dihitung di database (1 query)
+    getCustomerBalances(),
+  ]);
 
-    const pelangganTerakhir = customerBalances
-      .filter((c) => c.transaksiTerakhir.getTime() > 0)
-      .sort((a, b) => b.transaksiTerakhir.getTime() - a.transaksiTerakhir.getTime())
-      .slice(0, 3)
-      .map(({ saldo, ...item }) => ({
-        ...item,
+  let totalPiutang = 0;
+  const pelangganAktif: {
+    id: string;
+    name: string;
+    saldo: number;
+    transaksiTerakhir: Date;
+  }[] = [];
+
+  for (const c of customers) {
+    const row = balances.get(c.id);
+    const saldo = row?.saldo ?? 0;
+    totalPiutang += saldo;
+    if (row?.lastTransactionAt) {
+      pelangganAktif.push({
+        id: c.id,
+        name: c.name,
         saldo,
-        hutang: saldo > 0,
-      }));
-
-    return {
-      transaksiHariIni,
-      uangMasuk: pembayaranHariIni._sum.amount ?? 0,
-      totalPiutang,
-      pelangganTerakhir,
-    };
-  } catch (error) {
-    console.error("Database error:", error);
-    return {
-      transaksiHariIni: 0,
-      uangMasuk: 0,
-      totalPiutang: 0,
-      pelangganTerakhir: [],
-    };
+        transaksiTerakhir: row.lastTransactionAt,
+      });
+    }
   }
+
+  const pelangganTerakhir = pelangganAktif
+    .sort((a, b) => b.transaksiTerakhir.getTime() - a.transaksiTerakhir.getTime())
+    .slice(0, 3)
+    .map((item) => ({
+      ...item,
+      hutang: item.saldo > 0,
+    }));
+
+  return {
+    transaksiHariIni,
+    uangMasuk: pembayaranHariIni._sum.amount ?? 0,
+    totalPiutang,
+    pelangganTerakhir,
+  };
 }
