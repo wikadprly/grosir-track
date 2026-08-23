@@ -1,6 +1,6 @@
-import { ArrowLeft, Package, Users, Database, FileOutput, FileInput, Shield, Info, ChevronRight } from "lucide-react";
+import { ArrowLeft, Package, Users, Database, FileOutput, FileInput, Shield, Info, ChevronRight, LogOut } from "lucide-react";
 import Link from "next/link";
-import { getUserProfile } from "./actions";
+import { getUserProfile, logout } from "./actions";
 
 interface MenuItem {
   href: string | null;
@@ -18,7 +18,7 @@ const menuItems: MenuItem[] = [
   { href: "/laporan", icon: FileOutput, label: "Export Laporan", desc: "Unduh laporan Excel bulan ini", color: "bg-amber-50", iconColor: "text-amber-500" },
   { href: "/pengaturan/backup", icon: Database, label: "Backup Data", desc: "Cadangkan semua data ke file", color: "bg-green-50", iconColor: "text-green-500" },
   { href: "/pengaturan/import", icon: FileInput, label: "Import Data", desc: "Pulihkan data dari file backup", color: "bg-purple-50", iconColor: "text-purple-500" },
-  { href: null, icon: Shield, label: "Keamanan", desc: "Ubah PIN aplikasi", color: "bg-red-50", iconColor: "text-[#d9534f]", comingSoon: true },
+  { href: "/pengaturan/keamanan", icon: Shield, label: "Keamanan", desc: "Ubah PIN aplikasi", color: "bg-red-50", iconColor: "text-[#d9534f]" },
   { href: null, icon: Info, label: "Tentang Aplikasi", desc: "Versi aplikasi & bantuan", color: "bg-gray-100", iconColor: "text-gray-500", comingSoon: true },
 ];
 
@@ -42,10 +42,19 @@ export default async function PengaturanPage() {
           <div className="w-14 h-14 bg-[#e65c5c] rounded-full flex items-center justify-center text-white text-xl font-bold">
             {user?.name?.charAt(0) || "I"}
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-lg font-bold text-gray-800">{user?.name || "Ibu"}</p>
             <p className="text-sm text-gray-400">Pemilik Toko</p>
           </div>
+          <form action={logout}>
+            <button
+              type="submit"
+              title="Keluar"
+              className="p-3 rounded-xl bg-gray-50 text-gray-400 active:bg-red-50 active:text-[#d9534f] transition-colors"
+            >
+              <LogOut size={20} />
+            </button>
+          </form>
         </div>
       </div>
 

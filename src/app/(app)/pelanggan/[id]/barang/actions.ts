@@ -3,10 +3,12 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { nextRecordTime } from "@/lib/recordTime";
+import { requireSession } from "@/lib/auth";
 
 const productSelect = { id: true, name: true, defaultPrice: true } as const;
 
 export async function getProducts() {
+  await requireSession();
   const products = await prisma.product.findMany({
     select: productSelect,
     orderBy: { name: "asc" },
@@ -23,6 +25,7 @@ export async function createTransaction(
   date: string,
   items: { productId: string; qty: number; harga: number }[]
 ) {
+  await requireSession();
   if (!customerId) throw new Error("Pelanggan tidak valid");
   if (!date) throw new Error("Tanggal harus diisi");
   if (!items || items.length === 0) throw new Error("Minimal satu barang harus dipilih");

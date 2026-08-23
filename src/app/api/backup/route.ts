@@ -1,9 +1,13 @@
 import prisma from "@/lib/prisma";
 import { jakartaDateKey, jakartaTimeNow } from "@/lib/time";
+import { isAuthenticated } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!(await isAuthenticated())) {
+    return Response.json({ error: "Tidak diizinkan." }, { status: 401 });
+  }
   const [users, products, customers, transactions, transactionDetails, payments] =
     await Promise.all([
       prisma.user.findMany(),

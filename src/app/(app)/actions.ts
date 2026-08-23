@@ -3,8 +3,11 @@
 import prisma from "@/lib/prisma";
 import { startOfJakartaDay, endOfJakartaDay } from "@/lib/time";
 import { getCustomerBalances } from "@/lib/balanceQuery";
+import { requireSession } from "@/lib/auth";
 
 export async function getDashboardData() {
+  await requireSession();
+
   const startOfDay = startOfJakartaDay();
   const endOfDay = endOfJakartaDay();
 

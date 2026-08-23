@@ -3,8 +3,10 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getCustomerBalances } from "@/lib/balanceQuery";
+import { requireSession } from "@/lib/auth";
 
 export async function createCustomer(name: string, phone?: string) {
+  await requireSession();
   const trimmedName = name.trim();
   if (!trimmedName) {
     throw new Error("Nama pelanggan tidak boleh kosong");
@@ -37,6 +39,7 @@ interface CustomerListResult {
 }
 
 export async function getCustomers(query = "", page = 1): Promise<CustomerListResult> {
+  await requireSession();
   const pageSize = 50;
   const safePage = Math.max(1, Math.floor(page));
   const q = query.trim();

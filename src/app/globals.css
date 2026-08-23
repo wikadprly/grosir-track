@@ -61,6 +61,27 @@ body {
   color: white;
 }
 
+/* Animasi halaman PIN */
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  15%, 55% { transform: translateX(-10px); }
+  35%, 75% { transform: translateX(10px); }
+}
+
+.animate-pin-shake {
+  animation: pin-shake 0.45s ease;
+}
+
+@keyframes pin-pop {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.animate-pin-pop {
+  animation: pin-pop 0.2s ease-out;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 4px;

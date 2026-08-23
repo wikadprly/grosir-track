@@ -38,7 +38,7 @@ model Product {
 model Transaction {
   id          String              @id @default(uuid())
   customerId  String
-  customer    Customer            @relation(fields: [customerId], references: [id])
+  customer    Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
   details     TransactionDetail[]
   totalAmount Int
   date        DateTime            @default(now())
@@ -50,7 +50,7 @@ model Transaction {
 model TransactionDetail {
   id              String      @id @default(uuid())
   transactionId   String
-  transaction     Transaction @relation(fields: [transactionId], references: [id])
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   productId       String
   product         Product     @relation(fields: [productId], references: [id])
   qty             Int
@@ -61,7 +61,7 @@ model TransactionDetail {
 model Payment {
   id         String   @id @default(uuid())
   customerId String
-  customer   Customer @relation(fields: [customerId], references: [id])
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   amount     Int
   date       DateTime @default(now())
   note       String?

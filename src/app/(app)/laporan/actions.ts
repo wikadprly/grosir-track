@@ -3,8 +3,10 @@
 import prisma from "@/lib/prisma";
 import { JAKARTA_TIMEZONE, startOfJakartaMonth, startOfNextJakartaMonth } from "@/lib/time";
 import { getCustomerBalances } from "@/lib/balanceQuery";
+import { requireSession } from "@/lib/auth";
 
 export async function getLaporanData() {
+  await requireSession();
   const now = new Date();
   const startOfMonth = startOfJakartaMonth();
   const endOfMonth = startOfNextJakartaMonth();

@@ -3,8 +3,10 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { JAKARTA_TIMEZONE, jakartaDateKey, jakartaTimeShort } from "@/lib/time";
+import { requireSession } from "@/lib/auth";
 
 export async function getCustomerDetail(id: string) {
+  await requireSession();
   const customer = await prisma.customer.findUnique({
     where: { id },
     include: {
@@ -145,6 +147,7 @@ export async function getCustomerDetail(id: string) {
 }
 
 export async function deleteTransaction(id: string, customerId: string) {
+  await requireSession();
   await prisma.$transaction([
     prisma.transactionDetail.deleteMany({ where: { transactionId: id } }),
     prisma.transaction.delete({ where: { id } }),
@@ -154,6 +157,7 @@ export async function deleteTransaction(id: string, customerId: string) {
 }
 
 export async function deletePayment(id: string, customerId: string) {
+  await requireSession();
   await prisma.payment.delete({ where: { id } });
   revalidatePath(`/pelanggan/${customerId}`);
   revalidatePath("/");

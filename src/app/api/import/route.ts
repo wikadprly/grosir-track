@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { isAuthenticated } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -83,6 +84,10 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 export async function POST(request: Request) {
+  if (!(await isAuthenticated())) {
+    return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
+  }
+
   let file: File | null = null;
   try {
     const formData = await request.formData();

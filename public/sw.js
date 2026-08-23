@@ -1,4 +1,4 @@
-const CACHE_NAME = "buku-bon-v2";
+const CACHE_NAME = "buku-bon-v3";
 const STATIC_ASSETS = [
   "/icon.svg",
   "/icon-192.png",
@@ -47,15 +47,24 @@ self.addEventListener("fetch", (event) => {
   // Network-first untuk navigasi (HTML), fallback ke cache saat offline.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
+      (async () => {
+        try {
+          // redirect: "manual" agar respons hasil redirect (mis. sesi habis ->
+          // /masuk) tidak ikut tersimpan ke cache di bawah URL asal, yang bisa
+          // menyebabkan hydration mismatch (URL != konten).
+          const response = await fetch(request, { redirect: "manual" });
+          if (response.type === "opaqueredirect") {
+            return fetch(request);
+          }
           if (response && response.status === 200) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
           }
           return response;
-        })
-        .catch(() => caches.match(request))
+        } catch {
+          return caches.match(request);
+        }
+      })()
     );
     return;
   }

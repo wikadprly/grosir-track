@@ -1,5 +1,6 @@
 import { PrismaClient } from "../generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
 
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
@@ -15,11 +16,11 @@ async function main() {
     update: {},
     create: {
       id: "user-default",
-      pin: "123456",
+      pin: await bcrypt.hash("123456", 10),
       name: "Ibu",
     },
   });
-  console.log("✓ User created");
+  console.log("✓ User created (PIN default: 123456 — segera ubah di menu Keamanan)");
 
   // ── PRODUCTS ──
   const products = [

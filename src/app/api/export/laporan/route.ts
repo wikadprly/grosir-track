@@ -3,10 +3,15 @@ import ExcelJS from "exceljs";
 import { formatRupiah } from "@/lib/format";
 import { JAKARTA_TIMEZONE, jakartaDateKey, startOfJakartaMonth, startOfNextJakartaMonth } from "@/lib/time";
 import { getCustomerBalances } from "@/lib/balanceQuery";
+import { isAuthenticated } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  if (!(await isAuthenticated())) {
+    return Response.json({ error: "Tidak diizinkan." }, { status: 401 });
+  }
+
   const now = new Date();
   const startOfMonth = startOfJakartaMonth();
   const endOfMonth = startOfNextJakartaMonth();
