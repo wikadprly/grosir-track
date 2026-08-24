@@ -42,10 +42,10 @@ async function main() {
   const backupRes = await backupGET();
   assert(backupRes.status === 200, "backup GET status 200");
   const disposition = backupRes.headers.get("Content-Disposition") ?? "";
-  assert(disposition.includes("backup-buku-bon-"), "header Content-Disposition benar");
+  assert(disposition.includes("backup-grosir-track-"), "header Content-Disposition benar");
   const raw = await backupRes.text();
   const backupJson = JSON.parse(raw);
-  assert(backupJson.app === "buku-bon", "backup app marker");
+  assert(backupJson.app === "grosir-track", "backup app marker");
   assert(
     backupJson.counts.customers === before.customers &&
       backupJson.counts.transactions === before.transactions &&

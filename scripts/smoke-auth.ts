@@ -54,12 +54,12 @@ async function main() {
   console.log(masuk.status === 200 ? "OK" : "FAIL", "/masuk publik ->", masuk.status);
 
   // 4. Token palsu -> ditolak
-  const forged = await hit("/", { headers: { Cookie: "bukubon_session=palsu.palsu.palsu" } });
+  const forged = await hit("/", { headers: { Cookie: "grosirtrack_session=palsu.palsu.palsu" } });
   console.log(forged.status === 307 ? "OK" : "FAIL", "token palsu ditolak ->", forged.status);
 
   // 5. Token valid -> akses penuh
   const token = await makeToken();
-  const cookie = `bukubon_session=${token}`;
+  const cookie = `grosirtrack_session=${token}`;
   const authedHome = await hit("/", { headers: { Cookie: cookie }, skipBody: true });
   console.log(authedHome.status === 200 ? "OK" : "FAIL", "dengan sesi / ->", authedHome.status);
 
