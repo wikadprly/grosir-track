@@ -1,7 +1,7 @@
 {
-  "name": "Buku Bon Ibu",
-  "short_name": "Buku Bon",
-  "description": "Aplikasi pencatat hutang warung.",
+  "name": "Grosir Track",
+  "short_name": "Grosir Track",
+  "description": "Aplikasi pencatatan bon & stok grosir.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#faf9f7",

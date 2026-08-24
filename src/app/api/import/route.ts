@@ -16,7 +16,7 @@ const dateField = z
 const optionalDateField = dateField.optional();
 
 const backupSchema = z.object({
-  app: z.literal("buku-bon"),
+  app: z.literal("grosir-track"),
   version: z.number().int().min(1),
   data: z.object({
     users: z.array(
