@@ -1,4 +1,4 @@
-const CACHE_NAME = "buku-bon-v3";
+const CACHE_NAME = "grosir-track-v1";
 const STATIC_ASSETS = [
   "/icon.svg",
   "/icon-192.png",

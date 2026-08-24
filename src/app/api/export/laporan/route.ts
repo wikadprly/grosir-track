@@ -60,7 +60,7 @@ export async function GET() {
   }
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Buku Bon Ibu";
+  workbook.creator = "Grosir Track";
   workbook.created = new Date();
 
   const judulBulan = now.toLocaleDateString("id-ID", {
@@ -162,7 +162,7 @@ export async function GET() {
     status: 200,
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="laporan-buku-bon-${bulanFile}.xlsx"`,
+      "Content-Disposition": `attachment; filename="laporan-grosir-track-${bulanFile}.xlsx"`,
     },
   });
 }
