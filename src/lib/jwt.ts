@@ -5,13 +5,14 @@ export interface SessionPayload {
   sub: string;
   iat: number;
   exp: number;
+  ver?: number;
 }
 
 const encoder = new TextEncoder();
 
 function getSecretKey(): Promise<CryptoKey> {
   const secret = process.env.AUTH_SECRET;
-  if (!secret || secret.length < 16) {
+    if (!secret || secret.length < 32) {
     throw new Error(
       "AUTH_SECRET belum diatur. Tambahkan AUTH_SECRET (string acak minimal 32 karakter) di file .env"
     );
@@ -44,9 +45,9 @@ async function sign(data: string): Promise<string> {
   return toBase64Url(new Uint8Array(signature));
 }
 
-export async function signSession(userId: string, maxAgeSeconds: number): Promise<string> {
+export async function signSession(userId: string, maxAgeSeconds: number, tokenVersion = 0): Promise<string> {
   const issuedAt = Math.floor(Date.now() / 1000);
-  const payload: SessionPayload = { sub: userId, iat: issuedAt, exp: issuedAt + maxAgeSeconds };
+  const payload: SessionPayload = { sub: userId, iat: issuedAt, exp: issuedAt + maxAgeSeconds, ver: tokenVersion };
   const header = toBase64Url(encoder.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
   const body = toBase64Url(encoder.encode(JSON.stringify(payload)));
   const signature = await sign(`${header}.${body}`);

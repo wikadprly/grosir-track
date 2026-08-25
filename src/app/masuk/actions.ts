@@ -7,33 +7,9 @@ import bcrypt from "bcryptjs";
 const MAX_ATTEMPTS = 5;
 const LOCK_WINDOW_MS = 60 * 1000;
 
-let failureCount = 0;
-let firstFailureAt = 0;
-
-function isLockedOut(): boolean {
-  if (failureCount === 0) return false;
-  const elapsed = Date.now() - firstFailureAt;
-  if (elapsed > LOCK_WINDOW_MS) {
-    failureCount = 0;
-    firstFailureAt = 0;
-    return false;
-  }
-  return failureCount >= MAX_ATTEMPTS;
-}
-
-function recordFailure(): void {
-  if (failureCount === 0) firstFailureAt = Date.now();
-  failureCount += 1;
-}
-
 export async function loginWithPin(pin: string): Promise<{ success: true } | { success: false; error: string }> {
   if (!/^\d{4,8}$/.test(pin)) {
     return { success: false, error: "Format PIN tidak valid." };
-  }
-
-  if (isLockedOut()) {
-    const waitSec = Math.ceil((LOCK_WINDOW_MS - (Date.now() - firstFailureAt)) / 1000);
-    return { success: false, error: `Terlalu banyak percobaan gagal. Coba lagi dalam ${waitSec} detik.` };
   }
 
   let user = null;
@@ -45,6 +21,13 @@ export async function loginWithPin(pin: string): Promise<{ success: true } | { s
 
   if (!user) {
     return { success: false, error: "Belum ada akun terdaftar. Jalankan seed database terlebih dahulu." };
+  }
+
+  // Lockout disimpan di database agar tahan restart/deploy
+  // dan tidak bisa direset hanya dengan membuat ulang koneksi.
+  if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+    const waitSec = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 1000);
+    return { success: false, error: `Terlalu banyak percobaan gagal. Coba lagi dalam ${waitSec} detik.` };
   }
 
   const stored = user.pin;
@@ -60,8 +43,21 @@ export async function loginWithPin(pin: string): Promise<{ success: true } | { s
   }
 
   if (!ok) {
-    recordFailure();
-    const remaining = Math.max(0, MAX_ATTEMPTS - failureCount);
+    if (user.failedAttempts + 1 >= MAX_ATTEMPTS) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          lockedUntil: new Date(Date.now() + LOCK_WINDOW_MS),
+          failedAttempts: 0,
+        },
+      });
+      return { success: false, error: "PIN salah. Coba lagi dalam 60 detik." };
+    }
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedAttempts: { increment: 1 } },
+    });
+    const remaining = Math.max(0, MAX_ATTEMPTS - (user.failedAttempts + 1));
     return {
       success: false,
       error: remaining > 0 ? `PIN salah. Sisa percobaan: ${remaining}.` : "PIN salah.",
@@ -71,12 +67,19 @@ export async function loginWithPin(pin: string): Promise<{ success: true } | { s
   if (needsUpgrade) {
     await prisma.user.update({
       where: { id: user.id },
-      data: { pin: await bcrypt.hash(pin, 10) },
+      data: {
+        pin: await bcrypt.hash(pin, 10),
+        failedAttempts: 0,
+        lockedUntil: null,
+      },
+    });
+  } else if (user.failedAttempts > 0 || user.lockedUntil) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { failedAttempts: 0, lockedUntil: null },
     });
   }
 
-  failureCount = 0;
-  firstFailureAt = 0;
   await createSession(user.id);
   return { success: true };
 }

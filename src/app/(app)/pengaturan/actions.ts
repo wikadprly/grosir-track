@@ -3,7 +3,7 @@
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
-import { requireSession, destroySession } from "@/lib/auth";
+import { requireSession, destroySession, createSession } from "@/lib/auth";
 
 export async function getUserProfile() {
   await requireSession();
@@ -43,10 +43,20 @@ export async function changePin(
     return { success: false, error: "PIN saat ini salah." };
   }
 
-  await prisma.user.update({
+  // Naikkan tokenVersion: semua sesi lama (device lain / cookie curian)
+  // langsung tidak valid, lalu terbitkan sesi baru untuk device ini.
+  const updated = await prisma.user.update({
     where: { id: user.id },
-    data: { pin: await bcrypt.hash(newPin, 10) },
+    data: {
+      pin: await bcrypt.hash(newPin, 10),
+      tokenVersion: { increment: 1 },
+      failedAttempts: 0,
+      lockedUntil: null,
+    },
+    select: { id: true },
   });
+  await destroySession();
+  await createSession(updated.id);
 
   return { success: true };
 }

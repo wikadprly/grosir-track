@@ -23,7 +23,8 @@ export async function getProducts() {
 export async function createTransaction(
   customerId: string,
   date: string,
-  items: { productId: string; qty: number; harga: number }[]
+  items: { productId: string; qty: number; harga: number }[],
+  clientRef?: string
 ) {
   await requireSession();
   if (!customerId) throw new Error("Pelanggan tidak valid");
@@ -37,25 +38,40 @@ export async function createTransaction(
 
   const totalAmount = items.reduce((sum, item) => sum + item.harga * item.qty, 0);
 
-  const transaction = await prisma.transaction.create({
-    data: {
-      customerId,
-      date: await nextRecordTime(customerId, date),
-      totalAmount,
-      details: {
-        create: items.map((item) => ({
-          productId: item.productId,
-          qty: item.qty,
-          priceAtThatTime: item.harga,
-          subtotal: item.harga * item.qty,
-        })),
+  // clientRef membuat sync ulang dari antrean offline bersifat idempoten:
+  // transaksi yang sama tidak akan tercatat dua kali.
+  if (clientRef) {
+    const existing = await prisma.transaction.findUnique({
+      where: { clientRef },
+      select: { id: true },
+    });
+    if (existing) return existing.id;
+  }
+
+  const transactionId = await prisma.$transaction(async (tx) => {
+    const recordDate = await nextRecordTime(tx, customerId, date);
+    const transaction = await tx.transaction.create({
+      data: {
+        customerId,
+        date: recordDate,
+        totalAmount,
+        clientRef: clientRef ?? null,
+        details: {
+          create: items.map((item) => ({
+            productId: item.productId,
+            qty: item.qty,
+            priceAtThatTime: item.harga,
+            subtotal: item.harga * item.qty,
+          })),
+        },
       },
-    },
-    include: { details: true },
+      select: { id: true },
+    });
+    return transaction.id;
   });
 
   revalidatePath(`/pelanggan/${customerId}`);
   revalidatePath("/");
 
-  return transaction;
+  return transactionId;
 }

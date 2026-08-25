@@ -22,7 +22,8 @@ const backupSchema = z.object({
     users: z.array(
       z.object({
         id: z.string().min(1),
-        pin: z.string(),
+        // Backup versi baru tidak menyertakan hash PIN; backup lama masih punya.
+        pin: z.string().optional(),
         name: z.string().default("Ibu"),
         updatedAt: optionalDateField,
       })
@@ -176,6 +177,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Hash PIN user saat ini dipertahankan agar tetap bisa masuk setelah
+    // restore dari backup yang tidak menyimpan PIN.
+    const currentUser = await prisma.user.findFirst({ select: { pin: true } });
+    const fallbackPin = currentUser?.pin ?? crypto.randomUUID().replaceAll("-", "");
+
     await prisma.$transaction(async (tx) => {
       await tx.transactionDetail.deleteMany();
       await tx.payment.deleteMany();
@@ -188,7 +194,7 @@ export async function POST(request: Request) {
         await tx.user.createMany({
           data: batch.map((u) => ({
             id: u.id,
-            pin: u.pin,
+            pin: u.pin ?? fallbackPin,
             name: u.name,
             updatedAt: u.updatedAt ?? new Date(),
           })),
