@@ -1,15 +1,46 @@
-const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
-
 export const JAKARTA_TIMEZONE = "Asia/Jakarta";
 
-function shiftedToJakarta(date: Date): Date {
-  return new Date(date.getTime() + JAKARTA_OFFSET_MS);
+interface JakartaParts {
+  year: number;
+  month: number; // 1-12
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+}
+
+const dtf = new Intl.DateTimeFormat("en-CA", {
+  timeZone: JAKARTA_TIMEZONE,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+});
+
+function jakartaParts(date: Date): JakartaParts {
+  const parts = dtf.formatToParts(date);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+  return {
+    year: get("year"),
+    month: get("month"),
+    day: get("day"),
+    hour: get("hour"),
+    minute: get("minute"),
+    second: get("second"),
+  };
+}
+
+function jakartaToLocalDate(date: Date): Date {
+  const p = jakartaParts(date);
+  return new Date(p.year, p.month - 1, p.day);
 }
 
 export function startOfJakartaDay(date: Date = new Date()): Date {
-  const j = shiftedToJakarta(date);
-  const midnightUtc = Date.UTC(j.getUTCFullYear(), j.getUTCMonth(), j.getUTCDate());
-  return new Date(midnightUtc - JAKARTA_OFFSET_MS);
+  const local = jakartaToLocalDate(date);
+  return local;
 }
 
 export function endOfJakartaDay(date: Date = new Date()): Date {
@@ -17,15 +48,13 @@ export function endOfJakartaDay(date: Date = new Date()): Date {
 }
 
 export function startOfJakartaMonth(date: Date = new Date()): Date {
-  const j = shiftedToJakarta(date);
-  const firstUtc = Date.UTC(j.getUTCFullYear(), j.getUTCMonth(), 1);
-  return new Date(firstUtc - JAKARTA_OFFSET_MS);
+  const p = jakartaParts(date);
+  return new Date(p.year, p.month - 1, 1);
 }
 
 export function startOfNextJakartaMonth(date: Date = new Date()): Date {
-  const j = shiftedToJakarta(date);
-  const firstUtc = Date.UTC(j.getUTCFullYear(), j.getUTCMonth() + 1, 1);
-  return new Date(firstUtc - JAKARTA_OFFSET_MS);
+  const p = jakartaParts(date);
+  return new Date(p.year, p.month, 1);
 }
 
 export function jakartaDateTime(dateStr: string, time?: string): Date {
@@ -39,22 +68,19 @@ export function jakartaDateTime(dateStr: string, time?: string): Date {
     mm = parts[1] ?? 0;
     ss = parts[2] ?? 0;
   }
-  const utcMs = Date.UTC(y, (m ?? 1) - 1, d ?? 1, hh - 7, mm, ss);
-  return new Date(utcMs);
+  return new Date(y, (m ?? 1) - 1, d ?? 1, hh, mm, ss);
 }
 
 export function jakartaTimeNow(): string {
-  const j = shiftedToJakarta(new Date());
-  return [j.getUTCHours(), j.getUTCMinutes(), j.getUTCSeconds()]
+  const p = jakartaParts(new Date());
+  return [p.hour, p.minute, p.second]
     .map((n) => String(n).padStart(2, "0"))
     .join(":");
 }
 
 export function jakartaDateKey(date: Date): string {
-  const j = shiftedToJakarta(date);
-  const mm = String(j.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(j.getUTCDate()).padStart(2, "0");
-  return `${j.getUTCFullYear()}-${mm}-${dd}`;
+  const p = jakartaParts(date);
+  return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
 }
 
 export function jakartaDayRange(dateStr: string): { start: Date; end: Date } {
@@ -63,8 +89,6 @@ export function jakartaDayRange(dateStr: string): { start: Date; end: Date } {
 }
 
 export function jakartaTimeShort(date: Date): string {
-  const j = shiftedToJakarta(date);
-  const hh = String(j.getUTCHours()).padStart(2, "0");
-  const mm = String(j.getUTCMinutes()).padStart(2, "0");
-  return `${hh}.${mm}`;
+  const p = jakartaParts(date);
+  return `${String(p.hour).padStart(2, "0")}.${String(p.minute).padStart(2, "0")}`;
 }

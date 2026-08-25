@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, Download } from "lucide-react";
+import { TrendingUp, TrendingDown, Download, Users } from "lucide-react";
 import { getLaporanData } from "./actions";
 import { formatRupiah } from "@/lib/format";
 
@@ -8,9 +8,10 @@ export default async function LaporanPage() {
   const data = await getLaporanData();
 
   const bulanIni = [
-    { label: "Total Belanja Bulan Ini", value: data.totalHutang, icon: TrendingUp, color: "text-[#d9534f]", bg: "bg-red-50" },
-    { label: "Total Pembayaran Bulan Ini", value: data.totalPembayaran, icon: TrendingDown, color: "text-green-500", bg: "bg-green-50" },
-    { label: "Total Sisa Piutang", value: data.sisaPiutang, icon: TrendingUp, color: "text-orange-500", bg: "bg-orange-50" },
+    { label: "Total Penjualan (Bon)", value: data.totalHutang, icon: TrendingUp, color: "text-[#d9534f]", bg: "bg-red-50", format: "rupiah" as const },
+    { label: "Total Pembayaran Bulan Ini", value: data.totalPembayaran, icon: TrendingDown, color: "text-green-500", bg: "bg-green-50", format: "rupiah" as const },
+    { label: "Total Sisa", value: data.sisaPiutang, icon: TrendingUp, color: "text-orange-500", bg: "bg-orange-50", format: "rupiah" as const },
+    { label: "Pelanggan Ada Sisa", value: data.jumlahBerhutang, icon: Users, color: "text-blue-500", bg: "bg-blue-50", format: "orang" as const },
   ];
 
   return (
@@ -45,7 +46,7 @@ export default async function LaporanPage() {
                   <span className="text-base font-medium text-gray-700">{item.label}</span>
                 </div>
                 <span className={`text-lg font-bold ${item.color}`}>
-                  {formatRupiah(item.value)}
+                  {item.format === "orang" ? `${item.value} orang` : formatRupiah(item.value)}
                 </span>
               </div>
             ))}

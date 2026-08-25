@@ -9,20 +9,27 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  category: string;
 }
 
 export default function BarangPage() {
   const [daftarBarang, setDaftarBarang] = useState<Product[]>([]);
   const [query, setQuery] = useState("");
+  const [kategoriFilter, setKategoriFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [namaBarang, setNamaBarang] = useState("");
   const [harga, setHarga] = useState("");
+  const [kategori, setKategori] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const daftarTampil = query.trim()
-    ? daftarBarang.filter((b) => b.name.toLowerCase().includes(query.trim().toLowerCase()))
-    : daftarBarang;
+  const daftarTampil = daftarBarang.filter((b) => {
+    const matchQuery = !query.trim() || b.name.toLowerCase().includes(query.trim().toLowerCase());
+    const matchKategori = !kategoriFilter || b.category === kategoriFilter;
+    return matchQuery && matchKategori;
+  });
+
+  const kategoriList = [...new Set(daftarBarang.map((b) => b.category).filter(Boolean))].sort();
 
   const loadProducts = async () => {
     const products = await getProductsList();
@@ -45,13 +52,14 @@ export default function BarangPage() {
     if (isNaN(numericHarga) || numericHarga <= 0) return;
 
     if (editingId) {
-      await updateProduct(editingId, namaBarang, numericHarga);
+      await updateProduct(editingId, namaBarang, numericHarga, kategori || undefined);
     } else {
-      await addProduct(namaBarang, numericHarga);
+      await addProduct(namaBarang, numericHarga, kategori || undefined);
     }
 
     setNamaBarang("");
     setHarga("");
+    setKategori("");
     setEditingId(null);
     setShowForm(false);
     await loadProducts();
@@ -61,6 +69,7 @@ export default function BarangPage() {
     setEditingId(product.id);
     setNamaBarang(product.name);
     setHarga(product.price.toString());
+    setKategori(product.category);
     setShowForm(true);
   };
 
@@ -74,6 +83,7 @@ export default function BarangPage() {
     setEditingId(null);
     setNamaBarang("");
     setHarga("");
+    setKategori("");
     setShowForm(true);
   };
 
@@ -81,6 +91,7 @@ export default function BarangPage() {
     setEditingId(null);
     setNamaBarang("");
     setHarga("");
+    setKategori("");
     setShowForm(false);
   };
 
@@ -109,6 +120,37 @@ export default function BarangPage() {
         </div>
       )}
 
+      {/* Filter Kategori */}
+      {!loading && kategoriList.length > 0 && (
+        <div className="px-5 mt-3">
+          <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <button
+              onClick={() => setKategoriFilter("")}
+              className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                kategoriFilter === ""
+                  ? "bg-[#e65c5c] text-white"
+                  : "bg-white text-gray-600 border border-gray-200"
+              }`}
+            >
+              Semua
+            </button>
+            {kategoriList.map((k) => (
+              <button
+                key={k}
+                onClick={() => setKategoriFilter(k)}
+                className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                  kategoriFilter === k
+                    ? "bg-[#e65c5c] text-white"
+                    : "bg-white text-gray-600 border border-gray-200"
+                }`}
+              >
+                {k}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Daftar Barang */}
       {loading ? (
         <div className="px-5 text-center text-gray-400 mt-10">Memuat data...</div>
@@ -116,7 +158,7 @@ export default function BarangPage() {
         <div className="px-5 text-center text-gray-400 mt-10">Belum ada barang</div>
       ) : daftarTampil.length === 0 ? (
         <div className="px-5 text-center text-gray-400 mt-10">
-          Barang tidak ditemukan untuk {query.trim()}
+          Barang tidak ditemukan
         </div>
       ) : (
         <div className="px-5 mt-4 space-y-3">
@@ -125,11 +167,16 @@ export default function BarangPage() {
               key={b.id}
               className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
             >
-              <div>
-                <p className="text-base font-bold text-gray-800">{b.name}</p>
-                <p className="text-sm text-[#e65c5c] font-semibold">{formatRupiah(b.price)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-bold text-gray-800 truncate">{b.name}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-sm text-[#e65c5c] font-semibold">{formatRupiah(b.price)}</p>
+                  {b.category && (
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{b.category}</span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ml-3">
                 <button
                   onClick={() => handleEdit(b)}
                   className="p-3 bg-blue-50 rounded-xl active:bg-blue-100 transition-colors"
@@ -188,7 +235,7 @@ export default function BarangPage() {
                   type="text"
                   value={namaBarang}
                   onChange={(e) => setNamaBarang(e.target.value)}
-                  placeholder="Contoh: Gula 1kg"
+                  placeholder="Contoh: 1 dus Good Day"
                   className="w-full border border-gray-200 rounded-2xl px-5 py-4 text-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#d9534f]"
                 />
               </div>
@@ -199,8 +246,34 @@ export default function BarangPage() {
                   inputMode="numeric"
                   value={harga}
                   onChange={(e) => setHarga(e.target.value.replace(/\D/g, ""))}
-                  placeholder="Contoh: 15000"
+                  placeholder="Contoh: 140000"
                   className="w-full border border-gray-200 rounded-2xl px-5 py-4 text-lg text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#d9534f]"
+                />
+              </div>
+              <div>
+                <label className="text-base font-medium text-gray-700 mb-2 block">Kategori</label>
+                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                  {kategoriList.map((k) => (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => setKategori(kategori === k ? "" : k)}
+                      className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                        kategori === k
+                          ? "bg-[#e65c5c] text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {k}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={kategori}
+                  onChange={(e) => setKategori(e.target.value)}
+                  placeholder="Atau ketik kategori baru..."
+                  className="w-full border border-gray-200 rounded-2xl px-5 py-3 text-base text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#d9534f] mt-2"
                 />
               </div>
               <button

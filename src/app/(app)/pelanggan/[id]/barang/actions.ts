@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { nextRecordTime } from "@/lib/recordTime";
 import { requireSession } from "@/lib/auth";
 
-const productSelect = { id: true, name: true, defaultPrice: true } as const;
+const productSelect = { id: true, name: true, defaultPrice: true, category: true } as const;
 
 export async function getProducts() {
   await requireSession();
@@ -17,6 +17,7 @@ export async function getProducts() {
     id: p.id,
     nama: p.name,
     harga: p.defaultPrice,
+    kategori: p.category ?? "",
   }));
 }
 

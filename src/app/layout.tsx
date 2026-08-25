@@ -3,13 +3,13 @@ import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Grosir Track",
+  title: "Toko Rema - Buku Bon",
   description: "Aplikasi pencatatan bon & stok grosir.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Grosir Track",
+    title: "Toko Rema",
   },
 };
 
