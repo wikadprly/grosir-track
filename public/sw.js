@@ -30,6 +30,21 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// Bersihkan salinan halaman HTML saat logout agar data tidak bisa dibaca
+// dari perangkat setelah sesi berakhir. Aset statis tetap disimpan.
+self.addEventListener("message", (event) => {
+  if (event.data !== "CLEAR_NAV_CACHE") return;
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.keys().then((keys) =>
+        Promise.all(
+          keys.filter((req) => req.mode === "navigate").map((req) => cache.delete(req))
+        )
+      )
+    )
+  );
+});
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 

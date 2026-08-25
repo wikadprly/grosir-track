@@ -6,6 +6,15 @@ export interface SessionPayload {
   iat: number;
   exp: number;
   ver?: number;
+  // Ditandai saat masuk memakai PIN cadangan: pemilik mungkin lupa PIN utama,
+  // jadi changePin tidak menuntut PIN lama. Tidak bisa dipalsukan dari klien
+  // karena token disimpan di cookie httpOnly.
+  rec?: boolean;
+}
+
+export interface SessionOptions {
+  tokenVersion?: number;
+  recovery?: boolean;
 }
 
 const encoder = new TextEncoder();
@@ -45,9 +54,15 @@ async function sign(data: string): Promise<string> {
   return toBase64Url(new Uint8Array(signature));
 }
 
-export async function signSession(userId: string, maxAgeSeconds: number, tokenVersion = 0): Promise<string> {
+export async function signSession(userId: string, maxAgeSeconds: number, options: SessionOptions = {}): Promise<string> {
   const issuedAt = Math.floor(Date.now() / 1000);
-  const payload: SessionPayload = { sub: userId, iat: issuedAt, exp: issuedAt + maxAgeSeconds, ver: tokenVersion };
+  const payload: SessionPayload = {
+    sub: userId,
+    iat: issuedAt,
+    exp: issuedAt + maxAgeSeconds,
+    ver: options.tokenVersion ?? 0,
+    ...(options.recovery ? { rec: true } : {}),
+  };
   const header = toBase64Url(encoder.encode(JSON.stringify({ alg: "HS256", typ: "JWT" })));
   const body = toBase64Url(encoder.encode(JSON.stringify(payload)));
   const signature = await sign(`${header}.${body}`);

@@ -4,7 +4,7 @@
 // Data akhir dikembalikan seperti semula.
 import "dotenv/config";
 import prisma from "../src/lib/prisma";
-import { loginWithPin } from "../src/app/masuk/actions";
+import { loginWithPin, loginWithRecoveryPin } from "../src/app/masuk/actions";
 
 function assert(cond: unknown, msg: string) {
   if (!cond) {
@@ -22,6 +22,9 @@ async function main() {
   const originalPin = user.pin;
   const originalFailed = user.failedAttempts;
   const originalLocked = user.lockedUntil;
+  const originalTokenVersion = (
+    await prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { tokenVersion: true } })
+  ).tokenVersion;
 
   try {
     // ── Persiapan: PIN polos agar sekaligus menguji jalur upgrade ke hash ──
@@ -66,6 +69,46 @@ async function main() {
     assert(/^\$2[aby]\$/.test(upgraded.pin), "PIN polos otomatis di-upgrade menjadi hash bcrypt");
     const cleared = await prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { failedAttempts: true, lockedUntil: true } });
     assert(cleared.failedAttempts === 0 && cleared.lockedUntil === null, "counter & lock dibersihkan setelah sukses");
+
+    // ── 4b. Jalur PIN cadangan (lupa PIN) ──
+    const originalRecovery = (await prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { recoveryPin: true } })).recoveryPin;
+    const versionBefore = (await prisma.user.findUniqueOrThrow({ where: { id: user.id }, select: { tokenVersion: true } })).tokenVersion;
+    const bcrypt = (await import("bcryptjs")).default;
+    try {
+      // Belum diatur -> ditolak dengan pesan jelas
+      await prisma.user.update({ where: { id: user.id }, data: { recoveryPin: null } });
+      const unset = await loginWithRecoveryPin("654321");
+      assert(!unset.success && /belum diatur/.test(unset.error ?? ""), "PIN cadangan yang belum diatur ditolak");
+
+      // Salah -> counter naik
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { recoveryPin: await bcrypt.hash("654321", 10), failedAttempts: 0, lockedUntil: null },
+      });
+      const wrong = await loginWithRecoveryPin("111111");
+      assert(!wrong.success && /Sisa percobaan/.test(wrong.error ?? ""), "PIN cadangan salah memberi sisa percobaan");
+
+      // Benar -> sesi recovery terbit (cookies dilempar di luar Next) + tokenVersion naik
+      let reachedSession = false;
+      try {
+        const ok = await loginWithRecoveryPin("654321");
+        reachedSession = ok.success;
+      } catch {
+        reachedSession = true;
+      }
+      assert(reachedSession, "login PIN cadangan sukses mencapai pembuatan sesi");
+      const fresh = await prisma.user.findUniqueOrThrow({
+        where: { id: user.id },
+        select: { tokenVersion: true, failedAttempts: true },
+      });
+      assert(fresh.tokenVersion === versionBefore + 1, "sesi lama dibatalkan (tokenVersion naik)");
+      assert(fresh.failedAttempts === 0, "counter dibersihkan setelah PIN cadangan benar");
+    } finally {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { recoveryPin: originalRecovery, failedAttempts: 0, lockedUntil: null },
+      });
+    }
 
     // ── 5. clientRef unik di level database (jaring pengaman anti duplikat) ──
     const customer = await prisma.customer.findFirst();
@@ -114,6 +157,7 @@ async function main() {
         pin: originalPin,
         failedAttempts: originalFailed,
         lockedUntil: originalLocked,
+        tokenVersion: originalTokenVersion,
       },
     });
     await prisma.$disconnect();
