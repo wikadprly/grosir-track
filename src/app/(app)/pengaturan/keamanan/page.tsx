@@ -1,10 +1,12 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { requireSession } from "@/lib/auth";
+import { getSessionInfo } from "../actions";
 import UbahPinClient from "./UbahPinClient";
 
 export default async function KeamananPage() {
   await requireSession();
+  const info = await getSessionInfo();
 
   return (
     <main className="min-h-screen">
@@ -18,7 +20,13 @@ export default async function KeamananPage() {
       </div>
 
       <div className="px-5">
-        <UbahPinClient />
+        {info.viaRecovery && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl px-4 py-3 mb-4 text-sm font-semibold leading-relaxed">
+            Kamu masuk memakai PIN cadangan. Buat PIN utama baru di bawah ini,
+            lalu gunakan PIN itu untuk masuk ke aplikasi.
+          </div>
+        )}
+        <UbahPinClient viaRecovery={info.viaRecovery} />
       </div>
     </main>
   );

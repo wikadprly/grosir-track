@@ -1,4 +1,5 @@
 import BottomNav from "@/components/BottomNav";
+import PendingSyncManager from "@/components/PendingSyncManager";
 
 export default function AppLayout({
   children,
@@ -10,6 +11,7 @@ export default function AppLayout({
       <main className="pb-28 min-h-screen">
         {children}
       </main>
+      <PendingSyncManager />
       <BottomNav />
     </div>
   );

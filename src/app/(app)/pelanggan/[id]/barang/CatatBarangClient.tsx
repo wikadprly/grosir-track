@@ -5,6 +5,7 @@ import { ArrowLeft, Search, Trash2, Plus, Minus, Pencil, Check, X, Loader2 } fro
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createTransaction } from "./actions";
+import { enqueuePending, isNetworkError } from "@/lib/offlineQueue";
 import { formatRupiah } from "@/lib/format";
 
 interface Product {
@@ -101,20 +102,48 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
   const handleSimpan = async () => {
     if (selectedItems.length === 0 || saving) return;
     setSaving(true);
+
+    const items = selectedItems.map((item) => ({
+      productId: item.id,
+      qty: item.qty,
+      harga: item.harga,
+    }));
+
+    const simpanOffline = async () => {
+      await enqueuePending({
+        id: crypto.randomUUID(),
+        kind: "transaction",
+        customerId: pelangganId,
+        date: tanggal,
+        items,
+        createdAt: Date.now(),
+        attempts: 0,
+      });
+      alert("Sinyal sedang tidak ada.\nCatatan sudah disimpan di HP dan akan terkirim otomatis saat online.");
+      router.push(`/pelanggan/${pelangganId}`);
+    };
+
+    const offline = typeof navigator !== "undefined" && !navigator.onLine;
+    if (offline) {
+      await simpanOffline();
+      setSaving(false);
+      return;
+    }
+
     try {
-      await createTransaction(
-        pelangganId,
-        tanggal,
-        selectedItems.map((item) => ({
-          productId: item.id,
-          qty: item.qty,
-          harga: item.harga,
-        }))
-      );
+      await createTransaction(pelangganId, tanggal, items, crypto.randomUUID());
       router.push(`/pelanggan/${pelangganId}`);
     } catch (error) {
-      console.error("Gagal menyimpan:", error);
-      alert("Gagal menyimpan catatan. Coba lagi.");
+      if (isNetworkError(error)) {
+        try {
+          await simpanOffline();
+        } catch {
+          alert("Gagal menyimpan catatan. Coba lagi.");
+        }
+      } else {
+        console.error("Gagal menyimpan:", error);
+        alert("Gagal menyimpan catatan. Coba lagi.");
+      }
     } finally {
       setSaving(false);
     }

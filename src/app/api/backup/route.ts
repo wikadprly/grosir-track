@@ -10,7 +10,12 @@ export async function GET() {
   }
   const [users, products, customers, transactions, transactionDetails, payments] =
     await Promise.all([
-      prisma.user.findMany(),
+      // PIN tidak ikut di-backup: file ini dianjurkan disimpan ke Drive/WhatsApp,
+      // hash PIN yang bocor tetap bisa di-brute-force offline (PIN hanya 6 digit).
+      prisma.user.findMany({
+        select: { id: true, name: true, updatedAt: true },
+        orderBy: { name: "asc" },
+      }),
       prisma.product.findMany({ orderBy: { name: "asc" } }),
       prisma.customer.findMany({ orderBy: { name: "asc" } }),
       prisma.transaction.findMany({ orderBy: { date: "asc" } }),

@@ -1,6 +1,7 @@
-import { ArrowLeft, Package, Users, Database, FileOutput, FileInput, Shield, Info, ChevronRight, LogOut } from "lucide-react";
+import { ArrowLeft, Package, Users, Database, FileOutput, FileInput, Shield, Info, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { getUserProfile, logout } from "./actions";
+import { getUserProfile } from "./actions";
+import LogoutButton from "@/components/LogoutButton";
 
 interface MenuItem {
   href: string | null;
@@ -46,15 +47,7 @@ export default async function PengaturanPage() {
             <p className="text-lg font-bold text-gray-800">{user?.name || "Ibu"}</p>
             <p className="text-sm text-gray-400">Pemilik Toko</p>
           </div>
-          <form action={logout}>
-            <button
-              type="submit"
-              title="Keluar"
-              className="p-3 rounded-xl bg-gray-50 text-gray-400 active:bg-red-50 active:text-[#d9534f] transition-colors"
-            >
-              <LogOut size={20} />
-            </button>
-          </form>
+          <LogoutButton />
         </div>
       </div>
 

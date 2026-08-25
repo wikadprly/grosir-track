@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Delete, Loader2, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { loginWithPin } from "./actions";
+import { loginWithPin, loginWithRecoveryPin } from "./actions";
 
 const KEYPAD: { key: string; letters?: string }[] = [
   { key: "1" },
@@ -22,10 +22,25 @@ export default function MasukClient() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [errorTick, setErrorTick] = useState(0);
+  const [mode, setMode] = useState<"pin" | "recovery">("pin");
   const [isPending, startTransition] = useTransition();
 
   const submit = (value: string) => {
     startTransition(async () => {
+      if (mode === "recovery") {
+        const result = await loginWithRecoveryPin(value);
+        if (result.success) {
+          // Sesi recovery: langsung diarahkan membuat PIN utama baru.
+          router.push("/pengaturan/keamanan");
+          router.refresh();
+        } else {
+          setError(result.error);
+          setErrorTick((t) => t + 1);
+          setPin("");
+        }
+        return;
+      }
+
       const result = await loginWithPin(value);
       if (result.success) {
         router.push("/");
@@ -54,6 +69,12 @@ export default function MasukClient() {
     if (next.length === 6) submit(next);
   };
 
+  const switchMode = () => {
+    setMode((m) => (m === "pin" ? "recovery" : "pin"));
+    setPin("");
+    setError("");
+  };
+
   return (
     <div className="w-full max-w-xs mx-auto flex flex-col items-center">
       {/* Indikator PIN */}
@@ -74,7 +95,9 @@ export default function MasukClient() {
       </div>
 
       <p className={`text-sm font-medium mt-4 text-center min-h-5 ${error ? "text-red-500" : "text-gray-400"}`}>
-        {isPending ? "Memeriksa PIN..." : error || "Masukkan 6 angka PIN"}
+        {isPending
+          ? "Memeriksa PIN..."
+          : error || (mode === "recovery" ? "Masukkan 6 angka PIN cadangan" : "Masukkan 6 angka PIN")}
       </p>
 
       {/* Keypad */}
@@ -130,6 +153,15 @@ export default function MasukClient() {
           )}
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={switchMode}
+        disabled={isPending}
+        className="mt-6 text-sm font-semibold text-gray-400 active:text-[#d9534f] transition-colors"
+      >
+        {mode === "pin" ? "Lupa PIN?" : "Kembali ke PIN utama"}
+      </button>
     </div>
   );
 }

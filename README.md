@@ -1,99 +1,174 @@
-# 📦 Grosir Track
+# 📦 Toko Rema
 
 > Aplikasi pencatatan bon pelanggan untuk usaha grosir, terinspirasi dari proses pencatatan manual pada usaha keluarga.
 
 ## 💡 Latar Belakang
 
-Ide **Grosir Track** berawal dari hal sederhana yang saya temui di usaha grosir keluarga.
+Ide **Toko Rema** berawal dari hal sederhana yang saya temui di usaha grosir keluarga.
 
-Proses pencatatan transaksi pelanggan masih dilakukan secara manual menggunakan buku bon. Setiap transaksi perlu ditulis satu per satu, mulai dari barang, jumlah, harga, hingga pembayaran atau pengurangan hutang. Nama barang juga diingat sendiri tanpa daftar — cukup ditulis langsung di buku.
+Proses pencatatan transaksi pelanggan masih dilakukan secara manual menggunakan buku bon. Setiap transaksi perlu ditulis satu per satu, mulai dari barang, jumlah, harga, hingga pembayaran. Nama barang juga diingat sendiri tanpa daftar — cukup ditulis langsung di buku.
 
-Ketika transaksi semakin banyak, proses pencatatan manual dapat menjadi melelahkan dan meningkatkan risiko kesalahan dalam penulisan maupun perhitungan.
-
-Dari situ muncul sebuah pertanyaan:
+Ketika transaksi semakin banyak, proses pencatatan manual menjadi melelahkan dan meningkatkan risiko kesalahan.
 
 > **"Bagaimana jika pencatatan bon dibuat secara digital, tetapi tetap terasa sesederhana menulis di buku?"**
 
-Dari permasalahan tersebut, saya mengembangkan **Grosir Track**, sebuah aplikasi PWA yang dirancang untuk membantu pencatatan transaksi dan hutang pelanggan secara lebih terstruktur.
+Dari permasalahan tersebut, saya mengembangkan **Toko Rema** — sebuah aplikasi PWA yang membantu pencatatan transaksi dan hutang pelanggan secara lebih terstruktur, tanpa menghilangkan kemudahan yang sudah biasa dirasakan dari buku bon.
 
-Fokus utama proyek ini bukan sekadar mengganti buku dengan aplikasi, tetapi mencari cara agar proses digital tetap mudah dipahami oleh pengguna yang sudah terbiasa dengan pencatatan manual.
+---
 
 ## 🎯 Tujuan
 
-Proyek ini bertujuan untuk mengeksplorasi bagaimana teknologi dapat membantu:
+- Mengurangi pencatatan dan perhitungan manual.
+- Mempermudah pengelolaan data pelanggan dan barang.
+- Menghitung total transaksi dan sisa hutang secara otomatis.
+- Menyimpan riwayat transaksi secara terstruktur.
+- Menyediakan laporan transaksi berdasarkan periode.
+- Mempertahankan pengalaman penggunaan yang sederhana seperti buku bon.
 
-* Mengurangi pencatatan dan perhitungan manual.
-* Mempermudah pengelolaan data pelanggan dan barang.
-* Menghitung total transaksi dan sisa hutang secara otomatis.
-* Menyimpan riwayat transaksi secara terstruktur.
-* Menyediakan laporan transaksi berdasarkan periode.
-* Mempertahankan pengalaman penggunaan yang sederhana seperti buku bon.
+---
 
 ## ✨ Fitur
 
-* **Dashboard** — ringkasan transaksi hari ini, uang masuk, dan total piutang.
-* **Pelanggan** — daftar pelanggan beserta saldo, pencarian, dan paginasi.
-* **Buku Bon Digital** — riwayat transaksi pelanggan (barang & pembayaran) dalam satu tampilan.
-* **Data Barang** — mengelola daftar barang dan harga default.
-* **Harga Fleksibel** — harga default dapat disesuaikan saat transaksi tertentu (tersimpan sebagai harga saat itu).
-* **Catat Barang** — menambahkan beberapa barang sekaligus dalam satu transaksi.
-* **Catat Pembayaran** — mencatat pembayaran pelanggan, saldo sisa diperbarui otomatis.
-* **Laporan** — melihat ringkasan transaksi per bulan, sisa piutang per pelanggan, dan detail transaksi.
-* **Ubah PIN** — mengganti PIN keamanan dari halaman pengaturan.
-* **Backup & Import** — mencadangkan seluruh data ke JSON dan memulihkannya kembali.
-* **Export Laporan** — mengunduh laporan bulanan dalam format Excel (.xlsx).
-* **PWA** — dapat diinstal pada perangkat mobile seperti aplikasi.
+- **Dashboard** — ringkasan transaksi hari ini, uang masuk, dan total piutang.
+- **Pelanggan** — daftar pelanggan beserta saldo, pencarian, dan paginasi.
+- **Buku Bon Digital** — riwayat transaksi pelanggan (barang & pembayaran) dalam satu tampilan.
+- **Data Barang** — mengelola daftar barang dan harga default.
+- **Harga Fleksibel** — harga default dapat disesuaikan saat transaksi tertentu dan tersimpan sebagai harga transaksi pada saat itu.
+- **Catat Barang** — menambahkan beberapa barang sekaligus dalam satu transaksi.
+- **Catat Pembayaran** — mencatat pembayaran pelanggan dan memperbarui saldo secara otomatis.
+- **Laporan** — melihat ringkasan transaksi per bulan, sisa piutang per pelanggan, dan detail transaksi.
+- **Ubah PIN** — mengganti PIN keamanan dari halaman pengaturan.
+- **PIN Cadangan** — PIN cadangan untuk recovery saat PIN utama lupa.
+- **Lockout Login** — pemblokiran sementara setelah beberapa kali gagal login.
+- **Backup & Import** — mencadangkan seluruh data ke JSON dan memulihkannya kembali (tanpa PIN).
+- **Export Laporan** — mengunduh laporan bulanan dalam format Excel `.xlsx`.
+- **Revokasi Sesi** — mengakhiri sesi login aktif dari pengaturan.
+- **Offline Sync** — sinkronisasi data saat kembali online.
+- **PWA** — dapat diinstal pada perangkat mobile seperti aplikasi.
+
+---
 
 ## 🧠 User-Centered Design
 
-Salah satu tantangan utama dalam proyek ini adalah bagaimana membuat sistem digital yang tetap mudah dipahami oleh pengguna yang sudah terbiasa menggunakan buku bon.
+Salah satu tantangan utama adalah membuat sistem digital yang tetap mudah dipahami oleh pengguna yang sudah terbiasa menggunakan buku bon.
 
-Karena itu, beberapa keputusan desain dibuat berdasarkan kebiasaan pencatatan manual:
+Beberapa keputusan desain dibuat berdasarkan kebiasaan pencatatan manual:
 
-* Riwayat transaksi pelanggan ditampilkan dalam satu halaman yang memanjang — seperti membuka buku bon.
-* Transaksi barang dan pembayaran berada dalam satu alur pencatatan.
-* Sisa hutang selalu ditampilkan dengan jelas.
-* Penambahan transaksi dibuat sesingkat mungkin — pilih pelanggan, tambah barang, selesai.
-* Antarmuka dirancang **mobile-first** dengan navigasi di bagian bawah layar.
-* Perhitungan saldo dilakukan otomatis di database untuk mengurangi kesalahan manual.
-* Semua waktu menggunakan zona waktu **Asia/Jakarta** agar konsisten dengan kebiasaan pengguna.
+- Riwayat transaksi pelanggan ditampilkan dalam satu halaman yang memanjang — seperti membuka buku bon.
+- Transaksi barang dan pembayaran berada dalam satu alur pencatatan.
+- Sisa hutang selalu ditampilkan dengan jelas.
+- Penambahan transaksi dibuat sesingkat mungkin — pilih pelanggan, tambah barang, selesai.
+- Beberapa barang dapat ditambahkan dalam satu transaksi tanpa berpindah halaman berulang kali.
+- Harga default barang dapat digunakan sebagai nilai awal, tetapi tetap dapat disesuaikan ketika transaksi dibuat.
+- Antarmuka dirancang **mobile-first** dengan navigasi di bagian bawah layar.
+- Perhitungan saldo dilakukan secara otomatis untuk mengurangi kesalahan perhitungan manual.
+- Semua waktu menggunakan zona waktu **Asia/Jakarta** agar konsisten dengan kebiasaan pengguna.
+
+Tujuan utamanya adalah membuat aplikasi yang tidak terasa seperti sistem administrasi yang kompleks, tetapi lebih seperti **buku bon yang dibuat dalam bentuk digital**.
+
+---
+
+## 🏗️ Perancangan Sistem
+
+Dalam merancang Toko Rema, saya menentukan kebutuhan berdasarkan proses pencatatan yang berjalan secara manual. Beberapa keputusan utama:
+
+### Pelanggan
+
+Setiap pelanggan memiliki buku bon digital yang berisi seluruh riwayat transaksi.
+
+### Barang
+
+Barang disimpan dalam database beserta harga default yang dapat dikelola melalui aplikasi.
+
+### Transaksi
+
+Satu transaksi dapat berisi beberapa barang sekaligus. Harga yang digunakan pada transaksi disimpan sebagai harga transaksi sehingga perubahan harga barang di kemudian hari tidak mengubah riwayat transaksi sebelumnya.
+
+### Pembayaran
+
+Pembayaran pelanggan dicatat sebagai transaksi tersendiri dan otomatis mengurangi saldo hutang.
+
+### Saldo
+
+Saldo pelanggan dihitung berdasarkan riwayat transaksi barang dan pembayaran sehingga posisi hutang dapat diketahui tanpa perhitungan manual.
+
+---
 
 ## 🛠️ Tech Stack
 
-* **Next.js 16** — App Router & Server Actions
-* **React 19**
-* **Tailwind CSS 4**
-* **Prisma 7** — ORM dengan PostgreSQL Adapter
-* **PostgreSQL** — database
-* **JWT Authentication** — PIN-based login, cookie session (httpOnly, 30 hari)
-* **ExcelJS** — export laporan ke Excel
-* **Zod** — validasi data (backup/import)
-* **PWA** — Service Worker + Web App Manifest
+- **Next.js 16** — App Router & Server Actions
+- **React 19**
+- **Tailwind CSS 4**
+- **Prisma 7** — ORM dengan PostgreSQL Adapter
+- **PostgreSQL** — database
+- **JWT Authentication** — PIN-based login dengan cookie session
+- **ExcelJS** — export laporan ke Excel
+- **Zod** — validasi data backup/import
+- **PWA** — Service Worker + Web App Manifest
+
+---
+
+## 🤖 AI Usage & Development Disclaimer
+
+Proyek ini dikembangkan dengan memanfaatkan AI tools sebagai **development assistant** selama proses perancangan dan pengembangan.
+
+### AI yang digunakan
+
+- **ChatGPT**
+- **Gemini**
+- **Claude**
+
+Ketiga AI tersebut saya gunakan terutama sebagai **partner diskusi** untuk:
+
+- Brainstorming ide dan solusi
+- Menganalisis permasalahan
+- Mengevaluasi user flow dan desain UX/UI
+- Membahas struktur sistem dan business rules
+- Mengevaluasi pilihan teknologi
+- Membantu memahami error atau masalah teknis
+
+Untuk implementasi kode, saya menggunakan **OpenCode** sebagai coding assistant.
+
+### Peran Developer
+
+Meskipun menggunakan AI, **perancangan dan pengambilan keputusan utama tetap dilakukan oleh saya**:
+
+- Identifikasi masalah dan kebutuhan pengguna
+- User flow dan business rules
+- Konsep aplikasi dan struktur fitur
+- Keputusan UX/UI dan rancangan database
+- Pilihan teknologi dan bagaimana sistem seharusnya bekerja
+
+Setiap implementasi dari AI tetap saya **review, pahami, sesuaikan, uji, dan validasi** terhadap kebutuhan sistem. AI digunakan sebagai alat bantu, sedangkan tanggung jawab terhadap desain, keputusan teknis, dan hasil akhir tetap berada pada developer.
+
+---
 
 ## 📱 Screenshots
 
 ### Dashboard
 
-*Tambahkan screenshot dashboard di sini.*
+> Tambahkan screenshot dashboard di sini.
 
 ### Buku Bon Pelanggan
 
-*Tambahkan screenshot halaman detail pelanggan di sini.*
+> Tambahkan screenshot halaman detail pelanggan di sini.
 
 ### Pencatatan Transaksi
 
-*Tambahkan screenshot proses pencatatan barang di sini.*
+> Tambahkan screenshot proses pencatatan barang di sini.
 
 ### Laporan
 
-*Tambahkan screenshot laporan di sini.*
+> Tambahkan screenshot laporan di sini.
+
+---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-* Node.js 18+
-* PostgreSQL
+- Node.js 18+
+- PostgreSQL
 
 ### Installation
 
@@ -130,6 +205,8 @@ Kemudian buka:
 ```text
 http://localhost:3000/masuk
 ```
+
+---
 
 ## 📂 Struktur Aplikasi
 
@@ -169,19 +246,23 @@ src/
 └── proxy.ts                    # Middleware autentikasi
 ```
 
+---
+
 ## 📌 Status Proyek
 
 **Personal Project — Prototype**
 
-Grosir Track merupakan proyek personal yang dikembangkan berdasarkan observasi terhadap proses pencatatan usaha keluarga.
+Toko Rema merupakan proyek personal yang dikembangkan berdasarkan observasi terhadap proses pencatatan usaha keluarga. Aplikasi ini masih berada dalam tahap pengembangan dan evaluasi.
 
-Aplikasi ini masih berada dalam tahap pengembangan dan evaluasi. Fokus utama proyek adalah mengeksplorasi bagaimana proses pencatatan bon manual dapat diterjemahkan menjadi pengalaman digital yang sederhana dan mudah digunakan.
+---
 
 ## 🔍 Pembelajaran
 
 Melalui proyek ini, saya belajar bahwa membangun sebuah aplikasi bukan hanya mengenai bagaimana membuat fitur bekerja, tetapi juga mengenai **memahami kebiasaan, kebutuhan, dan keterbatasan pengguna**.
 
 Sebuah solusi digital belum tentu lebih baik hanya karena lebih modern. Solusi yang baik adalah solusi yang benar-benar sesuai dengan konteks penggunanya.
+
+---
 
 ## 📄 License
 

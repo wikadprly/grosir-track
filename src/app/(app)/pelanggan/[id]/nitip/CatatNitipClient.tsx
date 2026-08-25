@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPayment } from "./actions";
+import { enqueuePending, isNetworkError } from "@/lib/offlineQueue";
 import { formatAngka } from "@/lib/format";
 
 interface Props {
@@ -36,13 +37,45 @@ export default function CatatNitipClient({ pelangganId }: Props) {
   const handleSimpan = async () => {
     if (!nominal || nominal === "0" || saving) return;
     setSaving(true);
+
+    const amount = parseInt(nominal.replace(/\D/g, ""), 10);
+
+    const simpanOffline = async () => {
+      await enqueuePending({
+        id: crypto.randomUUID(),
+        kind: "payment",
+        customerId: pelangganId,
+        amount,
+        date: tanggal,
+        note: catatan || undefined,
+        createdAt: Date.now(),
+        attempts: 0,
+      });
+      alert("Sinyal sedang tidak ada.\nCatatan sudah disimpan di HP dan akan terkirim otomatis saat online.");
+      router.push(`/pelanggan/${pelangganId}`);
+    };
+
+    const offline = typeof navigator !== "undefined" && !navigator.onLine;
+    if (offline) {
+      await simpanOffline();
+      setSaving(false);
+      return;
+    }
+
     try {
-      const amount = parseInt(nominal.replace(/\D/g, ""), 10);
-      await createPayment(pelangganId, amount, tanggal, catatan || undefined);
+      await createPayment(pelangganId, amount, tanggal, catatan || undefined, crypto.randomUUID());
       router.push(`/pelanggan/${pelangganId}`);
     } catch (error) {
-      console.error("Gagal menyimpan:", error);
-      alert("Gagal menyimpan catatan. Coba lagi.");
+      if (isNetworkError(error)) {
+        try {
+          await simpanOffline();
+        } catch {
+          alert("Gagal menyimpan catatan. Coba lagi.");
+        }
+      } else {
+        console.error("Gagal menyimpan:", error);
+        alert("Gagal menyimpan catatan. Coba lagi.");
+      }
     } finally {
       setSaving(false);
     }

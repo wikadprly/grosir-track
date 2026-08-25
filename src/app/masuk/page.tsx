@@ -15,7 +15,7 @@ export default function MasukPage() {
           <div className="w-20 h-20 mx-auto rounded-[1.6rem] bg-white shadow-lg shadow-[#d9534f]/25 flex items-center justify-center rotate-3 overflow-hidden">
             <img src="/icon.png" alt="Toko Rema" className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mt-5">Toko Rema</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mt-5">Toko Rema - Buku Bon</h1>
           <p className="text-sm text-gray-400 mt-1">Selamat datang kembali 👋</p>
         </div>
       </div>
