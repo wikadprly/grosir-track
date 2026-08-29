@@ -75,8 +75,13 @@ export default function BarangPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Yakin hapus barang ini?")) return;
-    await deleteProduct(id);
-    await loadProducts();
+    try {
+      await deleteProduct(id);
+      await loadProducts();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Gagal menghapus barang.";
+      alert(msg);
+    }
   };
 
   const handleBukaForm = () => {

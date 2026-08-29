@@ -15,8 +15,13 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   const segments = pathname.split("/").filter(Boolean);
-  const hasSubPage = segments.length > 2 && (segments.includes("barang") || segments.includes("nitip"));
-  if (hasSubPage) return null;
+
+  // Sembunyikan nav di semua halaman di bawah /pelanggan/: buku bon detail
+  // pelanggan (/pelanggan/[id]) maupun halaman mencatat (/pelanggan/[id]/barang
+  // dan /pelanggan/[id]/nitip). Halaman daftar pelanggan (/pelanggan) tetap
+  // menampilkan nav.
+  const hideNavOnDetail = segments[0] === "pelanggan" && segments.length >= 2;
+  if (hideNavOnDetail) return null;
 
   return (
     <nav className="fixed bottom-0 w-full max-w-lg mx-auto bg-white border-t border-gray-200 flex justify-around items-center pt-2 pb-5 px-2 z-50 rounded-t-2xl shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">

@@ -39,5 +39,17 @@ export async function updateProduct(id: string, name: string, price: number, cat
 
 export async function deleteProduct(id: string) {
   await requireSession();
+
+  // Barang yang sudah pernah dipakai di transaksi tidak bisa dihapus
+  // secara fisik karena riwayat buku bon bergantung padanya (relasi
+  // TransactionDetail.product). Beri tahu pengguna agar mengedit nama
+  // atau kategori, bukan menghapus.
+  const used = await prisma.transactionDetail.count({ where: { productId: id } });
+  if (used > 0) {
+    throw new Error(
+      `Barang ini sudah dipakai ${used} kali di transaksi, tidak bisa dihapus. Gunakan "edit" untuk mengubah nama/kategori barang.`
+    );
+  }
+
   await prisma.product.delete({ where: { id } });
 }

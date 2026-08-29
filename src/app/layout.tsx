@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
+    <html lang="id" data-scroll-behavior="smooth">
       <body className="bg-gray-200 text-gray-900 antialiased">
         <ServiceWorkerRegistration />
         {children}

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useTransition } from "react";
-import { ArrowLeft, MoreVertical, Package, Banknote, X, ShoppingBag, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Package, Banknote, X, ShoppingBag, Trash2, AlertTriangle, ChevronLeft, ChevronRight, Pencil, Plus, Minus, Search, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { deleteTransaction, deletePayment } from "./actions";
+import { deleteTransaction, deletePayment, getTransactionDetail, updateTransactionItems } from "./actions";
+import { getProducts } from "./barang/actions";
 import { formatRupiah } from "@/lib/format";
 import { jakartaDateKey } from "@/lib/time";
 
@@ -39,6 +40,20 @@ interface HariRiwayat {
   entries: FlatEntry[];
 }
 
+interface EditItem {
+  detailId: string;
+  productId: string;
+  nama: string;
+  qty: number;
+  harga: number;
+}
+
+interface ProductOption {
+  id: string;
+  nama: string;
+  harga: number;
+}
+
 interface Props {
   pelangganId: string;
   namaPelanggan: string;
@@ -50,7 +65,15 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
   const [hapusEntry, setHapusEntry] = useState<FlatEntry | null>(null);
   const [isPending, startTransition] = useTransition();
   const bottomRef = useRef<HTMLDivElement>(null);
+  const newDetailCounter = useRef(0);
   const router = useRouter();
+
+  const [editTransactionId, setEditTransactionId] = useState<string | null>(null);
+  const [editItems, setEditItems] = useState<EditItem[]>([]);
+  const [produkList, setProdukList] = useState<ProductOption[]>([]);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const currentMonth = jakartaDateKey(new Date()).slice(0, 7);
   const sortedHari = [...riwayatHari].sort((a, b) => a.tanggal.localeCompare(b.tanggal));
@@ -99,17 +122,98 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
     });
   };
 
+  const bukaEdit = async (entry: FlatEntry) => {
+    setEditLoading(true);
+    setEditTransactionId(entry.dbId);
+    setSearchQuery("");
+    try {
+      const [det, prods] = await Promise.all([
+        getTransactionDetail(entry.dbId),
+        getProducts(),
+      ]);
+      if (!det) return;
+      const items = det.items.map((it) => ({ ...it }));
+      setEditItems(items);
+      setProdukList(prods);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const hasilCariProduk = produkList.filter(
+    (p) => p.nama.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const tambahBarisEdit = (p: ProductOption) => {
+    const sudahAda = editItems.find((it) => it.productId === p.id);
+    if (sudahAda) {
+      ubahQtyEdit(sudahAda.detailId, sudahAda.qty + 1);
+    } else {
+      const detailId = `new-${p.id}-${newDetailCounter.current++}`;
+      setEditItems([...editItems, { detailId, productId: p.id, nama: p.nama, qty: 1, harga: p.harga }]);
+    }
+    setSearchQuery("");
+  };
+
+  const ubahQtyEdit = (detailId: string, qty: number) => {
+    setEditItems(
+      editItems.map((it) => (it.detailId === detailId ? { ...it, qty: qty > 0 ? qty : 1 } : it))
+    );
+  };
+
+  const ubahHargaEdit = (detailId: string, harga: number) => {
+    setEditItems(
+      editItems.map((it) => (it.detailId === detailId ? { ...it, harga } : it))
+    );
+  };
+
+  const gantiBarangEdit = (detailId: string, p: ProductOption) => {
+    setEditItems(
+      editItems.map((it) =>
+        it.detailId === detailId ? { ...it, productId: p.id, nama: p.nama, harga: p.harga } : it
+      )
+    );
+    setSearchQuery("");
+  };
+
+  const hapusBarisEdit = (detailId: string) => {
+    setEditItems(editItems.filter((it) => it.detailId !== detailId));
+  };
+
+  const simpanEdit = async () => {
+    if (editItems.length === 0 || editSaving || !editTransactionId) return;
+    setEditSaving(true);
+    try {
+      await updateTransactionItems(
+        editTransactionId,
+        pelangganId,
+        editItems.map((it) => ({ productId: it.productId, qty: it.qty, harga: it.harga }))
+      );
+      resetEdit();
+      router.refresh();
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Gagal menyimpan perubahan transaksi.";
+      alert(msg);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  const resetEdit = () => {
+    setEditTransactionId(null);
+    setEditItems([]);
+    setSearchQuery("");
+    setProdukList([]);
+  };
+
   return (
-    <main className="min-h-screen bg-[#faf9f7] relative pb-28">
+    <main className="min-h-screen bg-[#faf9f7] relative pb-24">
       {/* 1. HEADER (sticky) */}
       <div className="sticky top-0 z-10 bg-[#faf9f7] px-5 pt-8 pb-4 flex justify-between items-center">
         <Link href="/pelanggan" className="text-[#e65c5c] active:scale-95 transition-transform">
           <ArrowLeft size={26} />
         </Link>
-        <h1 className="text-xl font-bold text-[#e65c5c]">{namaPelanggan}</h1>
-        <button className="text-[#e65c5c] active:scale-95 transition-transform">
-          <MoreVertical size={26} />
-        </button>
+        <h1 className="flex-1 text-center text-xl font-bold text-[#e65c5c]">{namaPelanggan}</h1>
       </div>
 
       {/* 3. NAVIGATOR BULAN */}
@@ -186,10 +290,11 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
                           <span className="text-[14px] font-bold">Nitip (Pembayaran)</span>
                           <span className="text-[12px] text-gray-400 font-medium">{entry.jam}</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setHapusEntry(entry)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                            aria-label="Hapus pembayaran"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -198,14 +303,14 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
                           </span>
                         </div>
                       </div>
-                      <div className="flex justify-between text-[14px] font-bold pl-10 mt-1">
+                      <div className="flex justify-between items-center text-[15px] font-bold pl-8 mt-1">
                         <span className="text-gray-900">Sisa</span>
                         <span className={entry.sisa > 0 ? "text-[#e65c5c]" : "text-[#20a049]"}>
                           {entry.sisa > 0 ? formatRupiah(entry.sisa) : "LUNAS"}
                         </span>
                       </div>
                       {entry.kembalian ? (
-                        <div className="flex justify-between text-[13px] font-semibold pl-10 mt-0.5">
+                        <div className="flex justify-between text-[13px] font-semibold pl-8 mt-0.5">
                           <span className="text-gray-500">Kembalian</span>
                           <span className="text-[#20a049]">{formatRupiah(entry.kembalian)}</span>
                         </div>
@@ -219,22 +324,32 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
                           <span className="text-[14px] font-bold">Barang</span>
                           <span className="text-[12px] text-gray-400 font-medium">{entry.jam}</span>
                         </div>
-                        <button
+                          <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => void bukaEdit(entry)}
+                            className="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                            aria-label="Edit transaksi"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button
                           onClick={() => setHapusEntry(entry)}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                          aria-label="Hapus barang"
                         >
                           <Trash2 size={16} />
                         </button>
+                        </div>
                       </div>
                       <div className="space-y-1.5 mb-2">
                         {entry.items!.map((item, i) => (
-                          <div key={i} className="flex justify-between text-[14px] text-gray-700 pl-10">
-                            <span>{item.nama}</span>
-                            <span>{formatRupiah(item.harga)}</span>
+                          <div key={i} className="flex justify-between text-[15px] text-gray-800 pl-8">
+                            <span className="font-medium">{item.nama}</span>
+                            <span className="font-bold text-gray-900">{formatRupiah(item.harga)}</span>
                           </div>
                         ))}
                       </div>
-                      <div className="flex justify-between text-[14px] font-bold pl-10 mt-2 pt-2 border-t border-dashed border-gray-200">
+                      <div className="flex justify-between items-center text-[15px] font-bold pl-8 mt-2 pt-2 border-t border-dashed border-gray-200">
                         <span className="text-gray-900">Sisa</span>
                         <span className={entry.sisa > 0 ? "text-[#e65c5c]" : "text-[#20a049]"}>
                           {entry.sisa > 0 ? formatRupiah(entry.sisa) : "LUNAS"}
@@ -288,7 +403,7 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
       <div ref={bottomRef} />
 
       {/* 4. TOMBOL TAMBAH CATATAN */}
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md z-20">
+      <div className="fixed bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-md z-20">
         <button 
           onClick={() => setIsModalOpen(true)}
           className="w-full bg-[#e65c5c] text-white font-bold py-3.5 rounded-2xl shadow-[0_8px_20px_rgba(230,92,92,0.3)] hover:bg-red-600 active:scale-[0.98] transition-all text-[17px] tracking-wide"
@@ -353,6 +468,154 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
               Batal
             </button>
 
+          </div>
+        </div>
+      )}
+
+      {/* 6. MODAL EDIT TRANSAKSI */}
+      {editTransactionId && (
+        <div className="fixed inset-0 z-[100] overflow-y-auto">
+          <div className="sticky top-0">
+            <div className="absolute inset-0 bg-black/40" onClick={resetEdit} />
+          </div>
+          <div className="relative min-h-full flex items-end justify-center bg-black/40 backdrop-blur-[2px] max-w-md mx-auto">
+            <div className="bg-white w-full rounded-t-[28px] px-5 pt-5 pb-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Edit Transaksi</h2>
+                  <p className="text-[14px] text-gray-500 mt-0.5">Ubah barang, jumlah, atau harga</p>
+                </div>
+                <button onClick={resetEdit} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+
+              {editLoading ? (
+                <p className="text-center text-gray-400 py-8">Memuat transaksi...</p>
+              ) : (
+                <>
+                  {/* Cari & tambah barang */}
+                  <div className="relative mb-4">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Search size={20} className="text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Cari barang untuk ditambah..."
+                      className="block w-full pl-11 pr-4 py-3.5 border-2 border-blue-200 rounded-2xl bg-white placeholder-gray-400 focus:outline-none focus:border-blue-400 text-sm font-medium transition-all"
+                    />
+                    {searchQuery && (
+                      <div className="absolute left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden max-h-52 overflow-y-auto z-10">
+                        {hasilCariProduk.length > 0 ? (
+                          hasilCariProduk.map((p) => (
+                            <button
+                              key={p.id}
+                              onClick={() => tambahBarisEdit(p)}
+                              className="w-full flex justify-between items-center px-4 py-3 border-b border-gray-100 hover:bg-gray-50 text-left transition-colors"
+                            >
+                              <span className="text-sm font-bold text-gray-900">{p.nama}</span>
+                              <span className="text-sm font-bold text-gray-600">{formatRupiah(p.harga)}</span>
+                            </button>
+                          ))
+                        ) : (
+                          <div className="px-4 py-4 text-center text-sm text-gray-500">Barang tidak ditemukan</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Daftar item */}
+                  {editItems.length === 0 ? (
+                    <p className="text-center text-gray-400 py-4 text-sm">
+                      Belum ada barang. Cari dan pilih barang di atas.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {editItems.map((it) => (
+                        <div key={it.detailId} className="bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <select
+                                value={it.productId}
+                                onChange={(e) => {
+                                  const p = produkList.find((x) => x.id === e.target.value);
+                                  if (p) gantiBarangEdit(it.detailId, p);
+                                }}
+                                className="w-full text-sm font-bold text-gray-900 bg-transparent focus:outline-none appearance-none"
+                              >
+                                {produkList.map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.nama}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <button onClick={() => hapusBarisEdit(it.detailId)} className="p-1.5 text-red-400 hover:text-red-600 rounded-lg">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                          <div className="flex items-center justify-between gap-3 mt-2">
+                            <div className="flex items-center gap-2 bg-white w-max rounded-xl p-1 border border-gray-200">
+                              <button onClick={() => ubahQtyEdit(it.detailId, it.qty - 1)} className="p-1.5 bg-white rounded-lg shadow-sm active:scale-95">
+                                <Minus size={14} className="text-gray-600" />
+                              </button>
+                              <span className="w-6 text-center font-bold text-sm text-gray-900">{it.qty}</span>
+                              <button onClick={() => ubahQtyEdit(it.detailId, it.qty + 1)} className="p-1.5 bg-white rounded-lg shadow-sm active:scale-95">
+                                <Plus size={14} className="text-gray-600" />
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-gray-400">Rp</span>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={it.harga}
+                                onChange={(e) => ubahHargaEdit(it.detailId, parseInt(e.target.value.replace(/\D/g, ""), 10) || 0)}
+                                className="w-28 px-3 py-2 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 text-right focus:outline-none focus:border-[#e65c5c]"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex justify-between text-[12px] text-gray-400 mt-1.5 pl-1">
+                            <span>Subtotal</span>
+                            <span className="font-bold text-gray-600">{formatRupiah(it.qty * it.harga)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Footer simpan */}
+                  <div className="sticky bottom-0 bg-white pt-4 mt-4 border-t border-gray-100">
+                    <div className="flex justify-between items-center mb-3 px-1">
+                      <span className="text-base font-bold text-gray-900">Total</span>
+                      <span className="text-xl font-bold text-[#e65c5c]">
+                        {formatRupiah(editItems.reduce((s, it) => s + it.qty * it.harga, 0))}
+                      </span>
+                    </div>
+                    <button
+                      onClick={simpanEdit}
+                      disabled={editItems.length === 0 || editSaving}
+                      className={`w-full font-bold py-4 rounded-2xl transition-all text-[17px] tracking-wide flex items-center justify-center gap-2 ${
+                        editItems.length > 0 && !editSaving
+                          ? "bg-[#e65c5c] text-white shadow-[0_8px_20px_rgba(230,92,92,0.3)] active:scale-[0.98]"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      }`}
+                    >
+                      {editSaving ? (
+                        <>
+                          <Loader2 size={20} className="animate-spin" />
+                          Menyimpan...
+                        </>
+                      ) : (
+                        "Simpan Perubahan"
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

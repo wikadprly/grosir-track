@@ -28,6 +28,26 @@ const STORE_NAME = "pending";
 
 export const PENDING_CHANGED_EVENT = "bukubon:pending-changed";
 
+// Menghasilkan ID unik yang aman dipakai di konteks non-secure (HTTP via IP).
+// crypto.randomUUID() hanya tersedia di Secure Context (HTTPS / localhost),
+// sehingga akses via http://<ip> akan melempar SecurityError. Helper ini
+// memakai crypto bila tersedia dan fallback ke Math.random bila tidak.
+export function newClientId(): string {
+  const c = globalThis.crypto as Crypto | undefined;
+  if (c && typeof c.randomUUID === "function") {
+    try {
+      return c.randomUUID();
+    } catch {
+      // jatuh ke fallback
+    }
+  }
+  const hex = () =>
+    Math.floor(Math.random() * 0x100000000)
+      .toString(16)
+      .padStart(8, "0");
+  return `${hex()}-${hex()}-${hex()}-${hex()}`;
+}
+
 function openQueueDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1);
