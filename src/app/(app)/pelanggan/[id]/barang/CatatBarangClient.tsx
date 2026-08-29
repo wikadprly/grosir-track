@@ -5,7 +5,7 @@ import { ArrowLeft, Search, Trash2, Plus, Minus, Pencil, Check, X, Loader2 } fro
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createTransaction } from "./actions";
-import { enqueuePending, isNetworkError } from "@/lib/offlineQueue";
+import { enqueuePending, isNetworkError, newClientId } from "@/lib/offlineQueue";
 import { formatRupiah } from "@/lib/format";
 
 interface Product {
@@ -111,7 +111,7 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
 
     const simpanOffline = async () => {
       await enqueuePending({
-        id: crypto.randomUUID(),
+        id: newClientId(),
         kind: "transaction",
         customerId: pelangganId,
         date: tanggal,
@@ -131,7 +131,7 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
     }
 
     try {
-      await createTransaction(pelangganId, tanggal, items, crypto.randomUUID());
+      await createTransaction(pelangganId, tanggal, items, newClientId());
       router.push(`/pelanggan/${pelangganId}`);
     } catch (error) {
       if (isNetworkError(error)) {

@@ -3,13 +3,13 @@ import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Grosir Track",
+  title: "Toko Rema - Buku Bon",
   description: "Aplikasi pencatatan bon & stok grosir.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Grosir Track",
+    title: "Toko Rema",
   },
 };
 
@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
+    <html lang="id" data-scroll-behavior="smooth">
       <body className="bg-gray-200 text-gray-900 antialiased">
         <ServiceWorkerRegistration />
         {children}

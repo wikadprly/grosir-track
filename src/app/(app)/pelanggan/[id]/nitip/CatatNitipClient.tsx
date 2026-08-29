@@ -5,7 +5,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createPayment } from "./actions";
-import { enqueuePending, isNetworkError } from "@/lib/offlineQueue";
+import { enqueuePending, isNetworkError, newClientId } from "@/lib/offlineQueue";
 import { formatAngka } from "@/lib/format";
 
 interface Props {
@@ -42,7 +42,7 @@ export default function CatatNitipClient({ pelangganId }: Props) {
 
     const simpanOffline = async () => {
       await enqueuePending({
-        id: crypto.randomUUID(),
+        id: newClientId(),
         kind: "payment",
         customerId: pelangganId,
         amount,
@@ -63,7 +63,7 @@ export default function CatatNitipClient({ pelangganId }: Props) {
     }
 
     try {
-      await createPayment(pelangganId, amount, tanggal, catatan || undefined, crypto.randomUUID());
+      await createPayment(pelangganId, amount, tanggal, catatan || undefined, newClientId());
       router.push(`/pelanggan/${pelangganId}`);
     } catch (error) {
       if (isNetworkError(error)) {

@@ -55,12 +55,15 @@ export async function GET() {
   const totalPembayaran = pembayaranBulanIni._sum.amount ?? 0;
   // Total sisa piutang saat ini (semua periode), konsisten dengan dashboard & laporan
   let sisaPiutang = 0;
+  let jumlahBerhutang = 0;
   for (const c of customers) {
-    sisaPiutang += balances.get(c.id)?.saldo ?? 0;
+    const saldo = balances.get(c.id)?.saldo ?? 0;
+    sisaPiutang += saldo;
+    if (saldo > 0) jumlahBerhutang++;
   }
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Grosir Track";
+  workbook.creator = "Toko Rema";
   workbook.created = new Date();
 
   const judulBulan = now.toLocaleDateString("id-ID", {
@@ -76,9 +79,10 @@ export async function GET() {
     { header: "Nilai", key: "nilai", width: 25 },
   ];
   wsRingkasan.addRow({ label: `Bulan ${judulBulan}`, nilai: "" });
-  wsRingkasan.addRow({ label: "Total Belanja (Bulan Ini)", nilai: formatRupiah(totalHutang) });
+  wsRingkasan.addRow({ label: "Total Penjualan (Bon)", nilai: formatRupiah(totalHutang) });
   wsRingkasan.addRow({ label: "Total Pembayaran (Bulan Ini)", nilai: formatRupiah(totalPembayaran) });
-  wsRingkasan.addRow({ label: "Total Sisa Piutang", nilai: formatRupiah(sisaPiutang) });
+  wsRingkasan.addRow({ label: "Total Sisa", nilai: formatRupiah(sisaPiutang) });
+  wsRingkasan.addRow({ label: "Pelanggan Ada Sisa", nilai: `${jumlahBerhutang} orang` });
   wsRingkasan.getRow(1).font = { bold: true };
 
   // ── Sheet Sisa per Pelanggan ──
@@ -162,7 +166,7 @@ export async function GET() {
     status: 200,
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "Content-Disposition": `attachment; filename="laporan-grosir-track-${bulanFile}.xlsx"`,
+      "Content-Disposition": `attachment; filename="laporan-toko-rema-${bulanFile}.xlsx"`,
     },
   });
 }

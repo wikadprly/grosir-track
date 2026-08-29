@@ -24,7 +24,7 @@ export async function GET() {
     ]);
 
   const backup = {
-    app: "grosir-track",
+    app: "toko-rema",
     version: 1,
     exportedAt: new Date().toISOString(),
     counts: {
@@ -44,7 +44,7 @@ export async function GET() {
     status: 200,
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": `attachment; filename="backup-grosir-track-${stamp}.json"`,
+      "Content-Disposition": `attachment; filename="backup-toko-rema-${stamp}.json"`,
       "Cache-Control": "no-store",
     },
   });

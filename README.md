@@ -1,10 +1,10 @@
-# 📦 Grosir Track
+# 📦 Toko Rema
 
 > Aplikasi pencatatan bon pelanggan untuk usaha grosir, terinspirasi dari proses pencatatan manual pada usaha keluarga.
 
 ## 💡 Latar Belakang
 
-Ide **Grosir Track** berawal dari hal sederhana yang saya temui di usaha grosir keluarga.
+Ide **Toko Rema** berawal dari hal sederhana yang saya temui di usaha grosir keluarga.
 
 Proses pencatatan transaksi pelanggan masih dilakukan secara manual menggunakan buku bon. Setiap transaksi perlu ditulis satu per satu, mulai dari barang, jumlah, harga, hingga pembayaran. Nama barang juga diingat sendiri tanpa daftar — cukup ditulis langsung di buku.
 
@@ -12,7 +12,7 @@ Ketika transaksi semakin banyak, proses pencatatan manual menjadi melelahkan dan
 
 > **"Bagaimana jika pencatatan bon dibuat secara digital, tetapi tetap terasa sesederhana menulis di buku?"**
 
-Dari permasalahan tersebut, saya mengembangkan **Grosir Track** — sebuah aplikasi PWA yang membantu pencatatan transaksi dan hutang pelanggan secara lebih terstruktur, tanpa menghilangkan kemudahan yang sudah biasa dirasakan dari buku bon.
+Dari permasalahan tersebut, saya mengembangkan **Toko Rema** — sebuah aplikasi PWA yang membantu pencatatan transaksi dan hutang pelanggan secara lebih terstruktur, tanpa menghilangkan kemudahan yang sudah biasa dirasakan dari buku bon.
 
 ---
 
@@ -38,8 +38,12 @@ Dari permasalahan tersebut, saya mengembangkan **Grosir Track** — sebuah aplik
 - **Catat Pembayaran** — mencatat pembayaran pelanggan dan memperbarui saldo secara otomatis.
 - **Laporan** — melihat ringkasan transaksi per bulan, sisa piutang per pelanggan, dan detail transaksi.
 - **Ubah PIN** — mengganti PIN keamanan dari halaman pengaturan.
-- **Backup & Import** — mencadangkan seluruh data ke JSON dan memulihkannya kembali.
+- **PIN Cadangan** — PIN cadangan untuk recovery saat PIN utama lupa.
+- **Lockout Login** — pemblokiran sementara setelah beberapa kali gagal login.
+- **Backup & Import** — mencadangkan seluruh data ke JSON dan memulihkannya kembali (tanpa PIN).
 - **Export Laporan** — mengunduh laporan bulanan dalam format Excel `.xlsx`.
+- **Revokasi Sesi** — mengakhiri sesi login aktif dari pengaturan.
+- **Offline Sync** — sinkronisasi data saat kembali online.
 - **PWA** — dapat diinstal pada perangkat mobile seperti aplikasi.
 
 ---
@@ -66,7 +70,7 @@ Tujuan utamanya adalah membuat aplikasi yang tidak terasa seperti sistem adminis
 
 ## 🏗️ Perancangan Sistem
 
-Dalam merancang Grosir Track, saya menentukan kebutuhan berdasarkan proses pencatatan yang berjalan secara manual. Beberapa keputusan utama:
+Dalam merancang Toko Rema, saya menentukan kebutuhan berdasarkan proses pencatatan yang berjalan secara manual. Beberapa keputusan utama:
 
 ### Pelanggan
 
@@ -133,7 +137,7 @@ Meskipun menggunakan AI, **perancangan dan pengambilan keputusan utama tetap dil
 - User flow dan business rules
 - Konsep aplikasi dan struktur fitur
 - Keputusan UX/UI dan rancangan database
-- Pemilihan teknologi dan bagaimana sistem seharusnya bekerja
+- Pilihan teknologi dan bagaimana sistem seharusnya bekerja
 
 Setiap implementasi dari AI tetap saya **review, pahami, sesuaikan, uji, dan validasi** terhadap kebutuhan sistem. AI digunakan sebagai alat bantu, sedangkan tanggung jawab terhadap desain, keputusan teknis, dan hasil akhir tetap berada pada developer.
 
@@ -248,7 +252,7 @@ src/
 
 **Personal Project — Prototype**
 
-Grosir Track merupakan proyek personal yang dikembangkan berdasarkan observasi terhadap proses pencatatan usaha keluarga. Aplikasi ini masih berada dalam tahap pengembangan dan evaluasi.
+Toko Rema merupakan proyek personal yang dikembangkan berdasarkan observasi terhadap proses pencatatan usaha keluarga. Aplikasi ini masih berada dalam tahap pengembangan dan evaluasi.
 
 ---
 

@@ -57,6 +57,7 @@ export async function getLaporanData() {
     totalHutang,
     totalPembayaran,
     sisaPiutang,
+    jumlahBerhutang: denganHutang.length,
     topPelanggan: denganHutang,
   };
 }
