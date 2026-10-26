@@ -129,7 +129,7 @@ export async function GET() {
         tanggal,
         pelanggan: t.customer.name,
         barang: d.product.name,
-        qty: d.qty,
+        qty: Number(d.qty),
         hargaSatuan: d.priceAtThatTime,
         subtotal: d.subtotal,
       });

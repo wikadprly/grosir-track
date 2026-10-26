@@ -34,7 +34,7 @@ Dari permasalahan tersebut, saya mengembangkan **Toko Rema** — sebuah aplikasi
 - **Buku Bon Digital** — riwayat transaksi pelanggan (barang & pembayaran) dalam satu tampilan.
 - **Data Barang** — mengelola daftar barang dan harga default.
 - **Harga Fleksibel** — harga default dapat disesuaikan saat transaksi tertentu dan tersimpan sebagai harga transaksi pada saat itu.
-- **Catat Barang** — menambahkan beberapa barang sekaligus dalam satu transaksi.
+- **Catat Barang** — menambahkan beberapa barang sekaligus dalam satu transaksi, dengan jumlah bulat atau desimal (mis. 1,5 kg).
 - **Catat Pembayaran** — mencatat pembayaran pelanggan dan memperbarui saldo secara otomatis.
 - **Laporan** — melihat ringkasan transaksi per bulan, sisa piutang per pelanggan, dan detail transaksi.
 - **Ubah PIN** — mengganti PIN keamanan dari halaman pengaturan.
@@ -185,7 +185,11 @@ Buat file `.env`:
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/grosirtrack"
 AUTH_SECRET="minimal-32-karakter-acak"
+SEED_PIN="123456"
 ```
+
+`SEED_PIN` wajib 6 digit dan hanya dipakai saat seeding pertama. Ganti PIN
+setelah login pertama melalui halaman Pengaturan → Keamanan.
 
 ### Database Setup
 
@@ -237,11 +241,13 @@ src/
 │   ├── format.ts               # Format angka & rupiah
 │   ├── jwt.ts                  # JWT HS256 via Web Crypto
 │   ├── prisma.ts               # Prisma client singleton
+│   ├── qty.ts                  # Validasi, parsing & format jumlah
 │   ├── recordTime.ts           # Timestamp urut per hari
 │   ├── session.ts              # Konstanta session cookie
 │   └── time.ts                 # Helper zona waktu Asia/Jakarta
 ├── components/
 │   ├── BottomNav.tsx           # Navigasi bawah
+│   ├── QtyInput.tsx            # Input jumlah langsung (bulat/desimal)
 │   └── ServiceWorkerRegistration.tsx
 └── proxy.ts                    # Middleware autentikasi
 ```

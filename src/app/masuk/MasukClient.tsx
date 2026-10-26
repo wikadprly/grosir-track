@@ -61,7 +61,7 @@ export default function MasukClient() {
       return;
     }
     if (key === "masuk") {
-      if (pin.length >= 4) submit(pin);
+      if (pin.length === 6) submit(pin);
       return;
     }
     const next = pin.length >= 6 ? pin : pin + key;
@@ -139,9 +139,9 @@ export default function MasukClient() {
         <button
           type="button"
           onClick={() => pressKey("masuk")}
-          disabled={isPending || pin.length < 4}
+          disabled={isPending || pin.length < 6}
           className={`aspect-square w-full rounded-full flex items-center justify-center transition-all ${
-            pin.length >= 4 && !isPending
+            pin.length === 6 && !isPending
               ? "bg-gradient-to-br from-[#e65c5c] to-[#d9534f] text-white shadow-lg shadow-[#d9534f]/30 active:scale-90"
               : "bg-white border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] opacity-40 cursor-not-allowed"
           }`}

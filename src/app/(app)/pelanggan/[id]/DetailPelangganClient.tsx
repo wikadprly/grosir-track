@@ -7,7 +7,9 @@ import { useRouter } from "next/navigation";
 import { deleteTransaction, deletePayment, getTransactionDetail, updateTransactionItems } from "./actions";
 import { getProducts } from "./barang/actions";
 import { formatRupiah } from "@/lib/format";
+import { formatQty, itemSubtotal, roundQty } from "@/lib/qty";
 import { jakartaDateKey } from "@/lib/time";
+import QtyInput from "@/components/QtyInput";
 
 const BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 
@@ -26,7 +28,7 @@ interface FlatEntry {
   id: number;
   dbId: string;
   jenis: "barang" | "nitip";
-  items?: { nama: string; harga: number }[];
+  items?: { nama: string; harga: number; qty: number }[];
   total?: number;
   nominal?: number;
   sisa: number;
@@ -157,7 +159,11 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
 
   const ubahQtyEdit = (detailId: string, qty: number) => {
     setEditItems(
-      editItems.map((it) => (it.detailId === detailId ? { ...it, qty: qty > 0 ? qty : 1 } : it))
+      editItems.map((it) =>
+        it.detailId === detailId
+          ? { ...it, qty: qty > 0 ? roundQty(qty) : it.qty }
+          : it
+      )
     );
   };
 
@@ -341,19 +347,32 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
                         </button>
                         </div>
                       </div>
-                      <div className="space-y-1.5 mb-2">
+                      <div className="space-y-2 mb-2">
                         {entry.items!.map((item, i) => (
-                          <div key={i} className="flex justify-between text-[15px] text-gray-800 pl-8">
-                            <span className="font-medium">{item.nama}</span>
-                            <span className="font-bold text-gray-900">{formatRupiah(item.harga)}</span>
+                          <div key={i} className="flex justify-between items-start gap-3 text-[15px] text-gray-800 pl-8">
+                            <div className="min-w-0">
+                              <span className="font-medium">{item.nama}</span>
+                              <p className="text-[12px] text-gray-400 mt-0.5">
+                                {formatQty(item.qty)} × {formatRupiah(item.harga)}
+                              </p>
+                            </div>
+                            <span className="font-bold text-gray-900 shrink-0">
+                              {formatRupiah(itemSubtotal(item.harga, item.qty))}
+                            </span>
                           </div>
                         ))}
                       </div>
-                      <div className="flex justify-between items-center text-[15px] font-bold pl-8 mt-2 pt-2 border-t border-dashed border-gray-200">
-                        <span className="text-gray-900">Sisa</span>
-                        <span className={entry.sisa > 0 ? "text-[#e65c5c]" : "text-[#20a049]"}>
-                          {entry.sisa > 0 ? formatRupiah(entry.sisa) : "LUNAS"}
-                        </span>
+                      <div className="pl-8 mt-2 pt-2 border-t border-dashed border-gray-200 space-y-1">
+                        <div className="flex justify-between items-center text-[14px] font-semibold text-gray-500">
+                          <span>Total</span>
+                          <span>{formatRupiah(entry.total!)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-[15px] font-bold">
+                          <span className="text-gray-900">Sisa</span>
+                          <span className={entry.sisa > 0 ? "text-[#e65c5c]" : "text-[#20a049]"}>
+                            {entry.sisa > 0 ? formatRupiah(entry.sisa) : "LUNAS"}
+                          </span>
+                        </div>
                       </div>
                     </>
                   )}
@@ -561,7 +580,12 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
                               <button onClick={() => ubahQtyEdit(it.detailId, it.qty - 1)} className="p-1.5 bg-white rounded-lg shadow-sm active:scale-95">
                                 <Minus size={14} className="text-gray-600" />
                               </button>
-                              <span className="w-6 text-center font-bold text-sm text-gray-900">{it.qty}</span>
+                              <QtyInput
+                                value={it.qty}
+                                onChange={(qty) => ubahQtyEdit(it.detailId, qty)}
+                                ariaLabel={`Jumlah ${it.nama}`}
+                                className="w-12 bg-transparent py-1.5 text-center text-sm font-bold text-gray-900 focus:outline-none"
+                              />
                               <button onClick={() => ubahQtyEdit(it.detailId, it.qty + 1)} className="p-1.5 bg-white rounded-lg shadow-sm active:scale-95">
                                 <Plus size={14} className="text-gray-600" />
                               </button>
@@ -579,7 +603,7 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
                           </div>
                           <div className="flex justify-between text-[12px] text-gray-400 mt-1.5 pl-1">
                             <span>Subtotal</span>
-                            <span className="font-bold text-gray-600">{formatRupiah(it.qty * it.harga)}</span>
+                            <span className="font-bold text-gray-600">{formatRupiah(itemSubtotal(it.harga, it.qty))}</span>
                           </div>
                         </div>
                       ))}
@@ -591,7 +615,7 @@ export default function DetailPelangganClient({ pelangganId, namaPelanggan, riwa
                     <div className="flex justify-between items-center mb-3 px-1">
                       <span className="text-base font-bold text-gray-900">Total</span>
                       <span className="text-xl font-bold text-[#e65c5c]">
-                        {formatRupiah(editItems.reduce((s, it) => s + it.qty * it.harga, 0))}
+                        {formatRupiah(editItems.reduce((s, it) => s + itemSubtotal(it.harga, it.qty), 0))}
                       </span>
                     </div>
                     <button

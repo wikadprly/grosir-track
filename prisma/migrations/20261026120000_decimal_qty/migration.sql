@@ -1,0 +1,2 @@
+ALTER TABLE "TransactionDetail"
+ALTER COLUMN "qty" SET DATA TYPE DECIMAL(12, 3);

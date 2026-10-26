@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { JAKARTA_TIMEZONE, jakartaDateKey, jakartaTimeShort } from "@/lib/time";
 import { requireSession } from "@/lib/auth";
+import { isValidQty, itemSubtotal, roundQty } from "@/lib/qty";
 
 export async function getCustomerDetail(id: string) {
   await requireSession();
@@ -24,7 +25,13 @@ export async function getCustomerDetail(id: string) {
   if (!customer) return null;
 
   type Entry =
-    | { dbId: string; jenis: "barang"; tanggal: Date; items: { nama: string; harga: number }[]; total: number }
+    | {
+        dbId: string;
+        jenis: "barang";
+        tanggal: Date;
+        items: { nama: string; harga: number; qty: number }[];
+        total: number;
+      }
     | { dbId: string; jenis: "nitip"; tanggal: Date; nominal: number };
 
   const allEntries: Entry[] = [];
@@ -36,7 +43,8 @@ export async function getCustomerDetail(id: string) {
       tanggal: t.date,
       items: t.details.map((d) => ({
         nama: d.product.name,
-        harga: d.subtotal,
+        harga: d.priceAtThatTime,
+        qty: Number(d.qty),
       })),
       total: t.totalAmount,
     });
@@ -64,7 +72,7 @@ export async function getCustomerDetail(id: string) {
     id: number;
     dbId: string;
     jenis: "barang" | "nitip";
-    items?: { nama: string; harga: number }[];
+    items?: { nama: string; harga: number; qty: number }[];
     total?: number;
     nominal?: number;
     sisa: number;
@@ -174,7 +182,7 @@ export async function getTransactionDetail(transactionId: string) {
       detailId: d.id,
       productId: d.productId,
       nama: d.product.name,
-      qty: d.qty,
+      qty: Number(d.qty),
       harga: d.priceAtThatTime,
     })),
   };
@@ -192,8 +200,8 @@ export async function updateTransactionItems(
   if (!items || items.length === 0) throw new Error("Minimal satu barang harus dipilih");
   for (const item of items) {
     if (!item.productId) throw new Error("Barang tidak valid");
-    if (!Number.isInteger(item.qty) || item.qty <= 0) throw new Error("Jumlah barang tidak valid");
-    if (!Number.isFinite(item.harga) || item.harga <= 0) throw new Error("Harga tidak valid");
+    if (!isValidQty(item.qty)) throw new Error("Jumlah barang tidak valid");
+    if (!Number.isInteger(item.harga) || item.harga <= 0) throw new Error("Harga tidak valid");
   }
 
   // Pastikan transaksi milik pelanggan ini.
@@ -203,7 +211,11 @@ export async function updateTransactionItems(
   });
   if (!existing) throw new Error("Transaksi tidak ditemukan");
 
-  const totalAmount = items.reduce((sum, item) => sum + item.harga * item.qty, 0);
+  const normalizedItems = items.map((item) => ({ ...item, qty: roundQty(item.qty) }));
+  const totalAmount = normalizedItems.reduce(
+    (sum, item) => sum + itemSubtotal(item.harga, item.qty),
+    0
+  );
 
   await prisma.$transaction([
     prisma.transactionDetail.deleteMany({ where: { transactionId } }),
@@ -212,11 +224,11 @@ export async function updateTransactionItems(
       data: {
         totalAmount,
         details: {
-          create: items.map((item) => ({
+          create: normalizedItems.map((item) => ({
             productId: item.productId,
             qty: item.qty,
             priceAtThatTime: item.harga,
-            subtotal: item.harga * item.qty,
+            subtotal: itemSubtotal(item.harga, item.qty),
           })),
         },
       },

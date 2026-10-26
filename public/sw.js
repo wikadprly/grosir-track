@@ -1,7 +1,7 @@
 // Bump versi ini SETIAP rilis perubahan.
 // Browser menganggap sw.js "berubah" saat byte-nya berbeda, sehingga
 // service worker baru diinstal dan semua cache lama dibersihkan.
-const CACHE_NAME = "grosir-track-2026-08-29";
+const CACHE_NAME = "grosir-track-2026-10-26";
 
 // Hanya aset statis yang benar-benar statis & jarang berubah yang di-precache.
 // Bundle JS/CSS/HTML dari Next TIDAK di-precache di sini; ditangani
@@ -9,8 +9,11 @@ const CACHE_NAME = "grosir-track-2026-08-29";
 // diterima segera tanpa menunggu cache expire.
 const STATIC_ASSETS = [
   "/icon.svg",
+  "/icon.png",
   "/icon-192.png",
   "/icon-512.png",
+  "/icon-maskable-512.png",
+  "/apple-touch-icon.png",
   "/manifest.json",
 ];
 

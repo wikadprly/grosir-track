@@ -144,6 +144,13 @@ async function main() {
     return;
   }
 
+  const seedPin = process.env.SEED_PIN?.trim();
+  if (!seedPin || !/^\d{6}$/.test(seedPin)) {
+    throw new Error(
+      "SEED_PIN wajib diisi dengan 6 digit sebelum seeding. Contoh: SEED_PIN=123456 npm run db:seed"
+    );
+  }
+
   // Seed products
   for (const p of products) {
     await prisma.product.create({ data: p });
@@ -153,11 +160,11 @@ async function main() {
   // Seed user
   const user = await prisma.user.findUnique({ where: { id: "user-default" } });
   if (!user) {
-    const hashedPin = await bcrypt.hash("123456", 10);
+    const hashedPin = await bcrypt.hash(seedPin, 10);
     await prisma.user.create({
       data: { id: "user-default", pin: hashedPin, name: "Ibu" },
     });
-    console.log("User default dibuat (PIN: 123456).");
+    console.log("User default dibuat dengan PIN dari SEED_PIN.");
   }
 
   // Seed customers

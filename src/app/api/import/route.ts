@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
-import { isAuthenticated } from "@/lib/auth";
+import { createSession, isAuthenticated } from "@/lib/auth";
+import { isValidQty, roundQty } from "@/lib/qty";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,12 @@ const dateField = z
   .refine((d) => !Number.isNaN(d.getTime()), { message: "Tanggal tidak valid" });
 
 const optionalDateField = dateField.optional();
+
+const qtyField = z
+  .union([z.number(), z.string()])
+  .transform((v) => (typeof v === "string" ? Number(v) : v))
+  .refine(isValidQty, { message: "Jumlah tidak valid" })
+  .transform(roundQty);
 
 const backupSchema = z.object({
   app: z.literal("toko-rema").or(z.literal("grosir-track")),
@@ -33,6 +40,7 @@ const backupSchema = z.object({
         id: z.string().min(1),
         name: z.string().min(1),
         defaultPrice: z.number().int().min(0),
+        category: z.string().nullable().optional(),
         createdAt: optionalDateField,
         updatedAt: optionalDateField,
       })
@@ -52,6 +60,7 @@ const backupSchema = z.object({
         customerId: z.string().min(1),
         totalAmount: z.number().int().min(0),
         date: dateField,
+        clientRef: z.string().nullable().optional(),
         createdAt: optionalDateField,
       })
     ),
@@ -60,7 +69,7 @@ const backupSchema = z.object({
         id: z.string().min(1),
         transactionId: z.string().min(1),
         productId: z.string().min(1),
-        qty: z.number().int().min(1),
+        qty: qtyField,
         priceAtThatTime: z.number().int().min(0),
         subtotal: z.number().int().min(0),
       })
@@ -72,6 +81,7 @@ const backupSchema = z.object({
         amount: z.number().int().min(0),
         date: dateField,
         note: z.string().nullable().optional(),
+        clientRef: z.string().nullable().optional(),
         createdAt: optionalDateField,
       })
     ),
@@ -122,10 +132,36 @@ export async function POST(request: Request) {
 
   const { data } = check.data;
 
+  if (data.users.length === 0) {
+    return NextResponse.json(
+      { error: "File backup tidak berisi akun. Restore dibatalkan agar aplikasi tidak terkunci." },
+      { status: 400 }
+    );
+  }
+
   // Validasi relasi antar tabel sebelum menyentuh database
   const userIds = new Set(data.users.map((u) => u.id));
   if (userIds.size !== data.users.length) {
     return NextResponse.json({ error: "Ada ID user ganda di file backup." }, { status: 400 });
+  }
+
+  const transactionRefs = new Set(
+    data.transactions.map((t) => t.clientRef).filter((ref): ref is string => Boolean(ref))
+  );
+  const paymentRefs = new Set(
+    data.payments.map((p) => p.clientRef).filter((ref): ref is string => Boolean(ref))
+  );
+  if (transactionRefs.size !== data.transactions.filter((t) => t.clientRef).length) {
+    return NextResponse.json(
+      { error: "Ada referensi transaksi ganda di file backup." },
+      { status: 400 }
+    );
+  }
+  if (paymentRefs.size !== data.payments.filter((p) => p.clientRef).length) {
+    return NextResponse.json(
+      { error: "Ada referensi pembayaran ganda di file backup." },
+      { status: 400 }
+    );
   }
 
   const productIds = new Set(data.products.map((p) => p.id));
@@ -176,87 +212,112 @@ export async function POST(request: Request) {
     }
   }
 
+  let sessionUserId: string | null = null;
+
   try {
     // Hash PIN user saat ini dipertahankan agar tetap bisa masuk setelah
     // restore dari backup yang tidak menyimpan PIN.
-    const currentUser = await prisma.user.findFirst({ select: { pin: true } });
-    const fallbackPin = currentUser?.pin ?? crypto.randomUUID().replaceAll("-", "");
-
-    await prisma.$transaction(async (tx) => {
-      await tx.transactionDetail.deleteMany();
-      await tx.payment.deleteMany();
-      await tx.transaction.deleteMany();
-      await tx.customer.deleteMany();
-      await tx.product.deleteMany();
-      await tx.user.deleteMany();
-
-      for (const batch of chunk(data.users, 500)) {
-        await tx.user.createMany({
-          data: batch.map((u) => ({
-            id: u.id,
-            pin: u.pin ?? fallbackPin,
-            name: u.name,
-            updatedAt: u.updatedAt ?? new Date(),
-          })),
-        });
-      }
-
-      for (const batch of chunk(data.products, 500)) {
-        await tx.product.createMany({
-          data: batch.map((p) => ({
-            id: p.id,
-            name: p.name,
-            defaultPrice: p.defaultPrice,
-            createdAt: p.createdAt ?? new Date(),
-            updatedAt: p.updatedAt ?? new Date(),
-          })),
-        });
-      }
-
-      for (const batch of chunk(data.customers, 500)) {
-        await tx.customer.createMany({
-          data: batch.map((c) => ({
-            id: c.id,
-            name: c.name,
-            phone: c.phone ?? null,
-            createdAt: c.createdAt ?? new Date(),
-            updatedAt: c.updatedAt ?? new Date(),
-          })),
-        });
-      }
-
-      for (const batch of chunk(data.transactions, 500)) {
-        await tx.transaction.createMany({
-          data: batch.map((t) => ({
-            id: t.id,
-            customerId: t.customerId,
-            totalAmount: t.totalAmount,
-            date: t.date,
-            createdAt: t.createdAt ?? new Date(),
-          })),
-        });
-      }
-
-      for (const batch of chunk(data.transactionDetails, 500)) {
-        await tx.transactionDetail.createMany({ data: batch });
-      }
-
-      for (const batch of chunk(data.payments, 500)) {
-        await tx.payment.createMany({
-          data: batch.map((p) => ({
-            id: p.id,
-            customerId: p.customerId,
-            amount: p.amount,
-            date: p.date,
-            note: p.note ?? null,
-            createdAt: p.createdAt ?? new Date(),
-          })),
-        });
-      }
+    const currentUser = await prisma.user.findFirst({
+      select: { id: true, pin: true, recoveryPin: true, tokenVersion: true },
     });
+    const fallbackPin = currentUser?.pin ?? crypto.randomUUID().replaceAll("-", "");
+    const nextTokenVersion = (currentUser?.tokenVersion ?? 0) + 1;
+    sessionUserId =
+      currentUser && data.users.some((u) => u.id === currentUser.id)
+        ? currentUser.id
+        : data.users[0].id;
+
+    await prisma.$transaction(
+      async (tx) => {
+        await tx.transactionDetail.deleteMany();
+        await tx.payment.deleteMany();
+        await tx.transaction.deleteMany();
+        await tx.customer.deleteMany();
+        await tx.product.deleteMany();
+        await tx.user.deleteMany();
+
+        for (const batch of chunk(data.users, 500)) {
+          await tx.user.createMany({
+            data: batch.map((u) => ({
+              id: u.id,
+              pin: u.pin ?? fallbackPin,
+              name: u.name,
+              recoveryPin: currentUser?.id === u.id ? currentUser.recoveryPin : null,
+              tokenVersion: nextTokenVersion,
+              updatedAt: u.updatedAt ?? new Date(),
+            })),
+          });
+        }
+
+        for (const batch of chunk(data.products, 500)) {
+          await tx.product.createMany({
+            data: batch.map((p) => ({
+              id: p.id,
+              name: p.name,
+              defaultPrice: p.defaultPrice,
+              category: p.category ?? null,
+              createdAt: p.createdAt ?? new Date(),
+              updatedAt: p.updatedAt ?? new Date(),
+            })),
+          });
+        }
+
+        for (const batch of chunk(data.customers, 500)) {
+          await tx.customer.createMany({
+            data: batch.map((c) => ({
+              id: c.id,
+              name: c.name,
+              phone: c.phone ?? null,
+              createdAt: c.createdAt ?? new Date(),
+              updatedAt: c.updatedAt ?? new Date(),
+            })),
+          });
+        }
+
+        for (const batch of chunk(data.transactions, 500)) {
+          await tx.transaction.createMany({
+            data: batch.map((t) => ({
+              id: t.id,
+              customerId: t.customerId,
+              totalAmount: t.totalAmount,
+              date: t.date,
+              clientRef: t.clientRef || null,
+              createdAt: t.createdAt ?? new Date(),
+            })),
+          });
+        }
+
+        for (const batch of chunk(data.transactionDetails, 500)) {
+          await tx.transactionDetail.createMany({ data: batch });
+        }
+
+        for (const batch of chunk(data.payments, 500)) {
+          await tx.payment.createMany({
+            data: batch.map((p) => ({
+              id: p.id,
+              customerId: p.customerId,
+              amount: p.amount,
+              date: p.date,
+              note: p.note ?? null,
+              clientRef: p.clientRef || null,
+              createdAt: p.createdAt ?? new Date(),
+            })),
+          });
+        }
+      },
+      { maxWait: 15_000, timeout: 300_000 }
+    );
   } catch (error) {
     console.error("Gagal memulihkan backup:", error);
     return NextResponse.json({ error: "Gagal menyimpan data ke database. Data lama tidak berubah." }, { status: 500 });
+  }
+
+  if (sessionUserId) {
+    try {
+      await createSession(sessionUserId);
+    } catch (error) {
+      console.error("Gagal memperbarui sesi setelah import:", error);
+    }
   }
 
   revalidatePath("/", "layout");

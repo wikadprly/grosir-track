@@ -9,6 +9,8 @@ interface JakartaParts {
   second: number;
 }
 
+const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+
 const dtf = new Intl.DateTimeFormat("en-CA", {
   timeZone: JAKARTA_TIMEZONE,
   year: "numeric",
@@ -17,7 +19,7 @@ const dtf = new Intl.DateTimeFormat("en-CA", {
   hour: "2-digit",
   minute: "2-digit",
   second: "2-digit",
-  hour12: false,
+  hourCycle: "h23",
 });
 
 function jakartaParts(date: Date): JakartaParts {
@@ -33,14 +35,13 @@ function jakartaParts(date: Date): JakartaParts {
   };
 }
 
-function jakartaToLocalDate(date: Date): Date {
-  const p = jakartaParts(date);
-  return new Date(p.year, p.month - 1, p.day);
+function wibUtc(year: number, month: number, day: number, hour = 0, minute = 0, second = 0): Date {
+  return new Date(Date.UTC(year, month - 1, day, hour, minute, second) - WIB_OFFSET_MS);
 }
 
 export function startOfJakartaDay(date: Date = new Date()): Date {
-  const local = jakartaToLocalDate(date);
-  return local;
+  const p = jakartaParts(date);
+  return wibUtc(p.year, p.month, p.day);
 }
 
 export function endOfJakartaDay(date: Date = new Date()): Date {
@@ -49,12 +50,12 @@ export function endOfJakartaDay(date: Date = new Date()): Date {
 
 export function startOfJakartaMonth(date: Date = new Date()): Date {
   const p = jakartaParts(date);
-  return new Date(p.year, p.month - 1, 1);
+  return wibUtc(p.year, p.month, 1);
 }
 
 export function startOfNextJakartaMonth(date: Date = new Date()): Date {
   const p = jakartaParts(date);
-  return new Date(p.year, p.month, 1);
+  return wibUtc(p.year, p.month + 1, 1);
 }
 
 export function jakartaDateTime(dateStr: string, time?: string): Date {
@@ -68,7 +69,7 @@ export function jakartaDateTime(dateStr: string, time?: string): Date {
     mm = parts[1] ?? 0;
     ss = parts[2] ?? 0;
   }
-  return new Date(y, (m ?? 1) - 1, d ?? 1, hh, mm, ss);
+  return wibUtc(y, m ?? 1, d ?? 1, hh, mm, ss);
 }
 
 export function jakartaTimeNow(): string {

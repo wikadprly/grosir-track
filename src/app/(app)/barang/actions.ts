@@ -22,17 +22,23 @@ export async function getProductsList() {
 
 export async function addProduct(name: string, price: number, category?: string) {
   await requireSession();
+  const trimmedName = name.trim();
+  if (!trimmedName) throw new Error("Nama barang harus diisi");
+  if (!Number.isInteger(price) || price < 0) throw new Error("Harga tidak valid");
   const product = await prisma.product.create({
-    data: { name, defaultPrice: price, category: category || null },
+    data: { name: trimmedName, defaultPrice: price, category: category?.trim() || null },
   });
   return { id: product.id, name: product.name, price: product.defaultPrice, category: product.category ?? "" };
 }
 
 export async function updateProduct(id: string, name: string, price: number, category?: string) {
   await requireSession();
+  const trimmedName = name.trim();
+  if (!trimmedName) throw new Error("Nama barang harus diisi");
+  if (!Number.isInteger(price) || price < 0) throw new Error("Harga tidak valid");
   const product = await prisma.product.update({
     where: { id },
-    data: { name, defaultPrice: price, category: category || null },
+    data: { name: trimmedName, defaultPrice: price, category: category?.trim() || null },
   });
   return { id: product.id, name: product.name, price: product.defaultPrice, category: product.category ?? "" };
 }

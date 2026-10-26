@@ -14,7 +14,7 @@ export interface CustomerBalanceRow {
 // jadi hasil selalu >= 0 dan identik dengan perhitungan berurutan.
 interface SaldoRow {
   cid: string;
-  saldo: number;
+  saldo: bigint;
   lastTransactionAt: Date | null;
 }
 
@@ -36,7 +36,7 @@ export async function getCustomerBalances(): Promise<Map<string, CustomerBalance
       FROM deltas
     )
     SELECT cid,
-           GREATEST(SUM(amt) - LEAST(MIN(run), 0), 0)::int AS saldo,
+           GREATEST(SUM(amt) - LEAST(MIN(run), 0), 0)::bigint AS saldo,
            MAX(CASE WHEN k = 0 THEN dt END) AS "lastTransactionAt"
     FROM runs
     GROUP BY cid
@@ -45,7 +45,7 @@ export async function getCustomerBalances(): Promise<Map<string, CustomerBalance
   for (const row of rows) {
     map.set(row.cid, {
       customerId: row.cid,
-      saldo: row.saldo,
+      saldo: Number(row.saldo),
       lastTransactionAt: row.lastTransactionAt,
     });
   }

@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { createTransaction } from "./actions";
 import { enqueuePending, isNetworkError, newClientId } from "@/lib/offlineQueue";
 import { formatRupiah } from "@/lib/format";
+import { itemSubtotal, roundQty } from "@/lib/qty";
+import QtyInput from "@/components/QtyInput";
 
 interface Product {
   id: string;
@@ -64,11 +66,17 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
     setSelectedItems(
       selectedItems.map((item) => {
         if (item.id === id) {
-          const newQty = item.qty + delta;
-          return { ...item, qty: newQty > 0 ? newQty : 1 };
+          const newQty = roundQty(item.qty + delta);
+          return newQty > 0 ? { ...item, qty: newQty } : item;
         }
         return item;
       })
+    );
+  };
+
+  const ubahQtyLangsung = (id: string, qty: number) => {
+    setSelectedItems(
+      selectedItems.map((item) => (item.id === id ? { ...item, qty } : item))
     );
   };
 
@@ -150,7 +158,7 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
   };
 
   const subtotal = selectedItems.reduce(
-    (total, item) => total + item.harga * item.qty,
+    (total, item) => total + itemSubtotal(item.harga, item.qty),
     0
   );
 
@@ -278,7 +286,12 @@ export default function CatatBarangClient({ pelangganId, products }: Props) {
                     <button onClick={() => ubahQty(item.id, -1)} className="p-1.5 bg-white rounded-lg shadow-sm active:scale-95">
                       <Minus size={16} className="text-gray-600" />
                     </button>
-                    <span className="w-6 text-center font-bold text-[15px] text-gray-900">{item.qty}</span>
+                    <QtyInput
+                      value={item.qty}
+                      onChange={(qty) => ubahQtyLangsung(item.id, qty)}
+                      ariaLabel={`Jumlah ${item.nama}`}
+                      className="w-12 bg-transparent py-1.5 text-center font-bold text-[15px] text-gray-900 focus:outline-none"
+                    />
                     <button onClick={() => ubahQty(item.id, 1)} className="p-1.5 bg-white rounded-lg shadow-sm active:scale-95">
                       <Plus size={16} className="text-gray-600" />
                     </button>

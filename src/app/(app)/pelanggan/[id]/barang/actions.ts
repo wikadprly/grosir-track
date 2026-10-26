@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { nextRecordTime } from "@/lib/recordTime";
 import { requireSession } from "@/lib/auth";
+import { isValidQty, itemSubtotal, roundQty } from "@/lib/qty";
 
 const productSelect = { id: true, name: true, defaultPrice: true, category: true } as const;
 
@@ -33,11 +34,15 @@ export async function createTransaction(
   if (!items || items.length === 0) throw new Error("Minimal satu barang harus dipilih");
   for (const item of items) {
     if (!item.productId) throw new Error("Barang tidak valid");
-    if (!Number.isInteger(item.qty) || item.qty <= 0) throw new Error("Jumlah barang tidak valid");
-    if (!Number.isFinite(item.harga) || item.harga <= 0) throw new Error("Harga tidak valid");
+    if (!isValidQty(item.qty)) throw new Error("Jumlah barang tidak valid");
+    if (!Number.isInteger(item.harga) || item.harga <= 0) throw new Error("Harga tidak valid");
   }
 
-  const totalAmount = items.reduce((sum, item) => sum + item.harga * item.qty, 0);
+  const normalizedItems = items.map((item) => ({ ...item, qty: roundQty(item.qty) }));
+  const totalAmount = normalizedItems.reduce(
+    (sum, item) => sum + itemSubtotal(item.harga, item.qty),
+    0
+  );
 
   // clientRef membuat sync ulang dari antrean offline bersifat idempoten:
   // transaksi yang sama tidak akan tercatat dua kali.
@@ -58,11 +63,11 @@ export async function createTransaction(
         totalAmount,
         clientRef: clientRef ?? null,
         details: {
-          create: items.map((item) => ({
+          create: normalizedItems.map((item) => ({
             productId: item.productId,
             qty: item.qty,
             priceAtThatTime: item.harga,
-            subtotal: item.harga * item.qty,
+            subtotal: itemSubtotal(item.harga, item.qty),
           })),
         },
       },
