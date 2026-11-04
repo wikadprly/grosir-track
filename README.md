@@ -27,6 +27,12 @@ Dari permasalahan tersebut, saya mengembangkan **Toko Rema** — sebuah aplikasi
 
 ---
 
+## 🔐 Demo
+
+PIN demo: **`111111`** — dibuat dari `SEED_PIN` saat seeding pertama. Setelah login pertama, ganti PIN melalui **Pengaturan → Keamanan**.
+
+---
+
 ## ✨ Fitur
 
 - **Dashboard** — ringkasan transaksi hari ini, uang masuk, dan total piutang.
@@ -167,7 +173,7 @@ Setiap implementasi dari AI tetap saya **review, pahami, sesuaikan, uji, dan val
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20.9+
 - PostgreSQL
 
 ### Installation
@@ -180,12 +186,12 @@ npm install
 
 ### Environment Variables
 
-Buat file `.env`:
+Salin `.env.example` menjadi `.env`, lalu sesuaikan nilainya:
 
 ```env
 DATABASE_URL="postgresql://user:password@localhost:5432/grosirtrack"
 AUTH_SECRET="minimal-32-karakter-acak"
-SEED_PIN="123456"
+SEED_PIN="111111"
 ```
 
 `SEED_PIN` wajib 6 digit dan hanya dipakai saat seeding pertama. Ganti PIN
@@ -194,8 +200,8 @@ setelah login pertama melalui halaman Pengaturan → Keamanan.
 ### Database Setup
 
 ```bash
-npx prisma migrate deploy
-npx prisma db seed
+npm run db:migrate
+npm run db:seed
 ```
 
 ### Run Development Server
@@ -209,6 +215,26 @@ Kemudian buka:
 ```text
 http://localhost:3000/masuk
 ```
+
+### Deploy (Vercel + PostgreSQL)
+
+1. Siapkan PostgreSQL terkelola (Neon/Supabase). Gunakan connection string
+   **pooled** dan aktifkan SSL (`?sslmode=require`).
+2. Set environment variables di Vercel: `DATABASE_URL`, `AUTH_SECRET`
+   (minimal 32 karakter), dan `SEED_PIN` (6 digit).
+3. Jalankan migrasi dan seed ke database produksi dari mesin lokal dengan
+   `DATABASE_URL` diarahkan ke database produksi:
+
+   ```bash
+   npm run db:migrate
+   npm run db:seed
+   ```
+
+4. Import repository ke Vercel. Script `postinstall` otomatis menjalankan
+   `prisma generate`, sehingga Prisma Client selalu tersedia saat build.
+
+> Jangan commit file `.env`. Nilai `AUTH_SECRET` produksi harus berbeda dari
+> nilai pengembangan.
 
 ---
 

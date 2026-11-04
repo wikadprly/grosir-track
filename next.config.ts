@@ -2,9 +2,6 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.1.*", "192.168.56.*", "10.*", "172.16.*", "localhost"],
-  experimental: {
-    serverActions: {},
-  },
   turbopack: {},
   webpack: (config) => {
     config.resolve.fallback = {
