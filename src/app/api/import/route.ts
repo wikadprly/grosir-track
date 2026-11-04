@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
 import { createSession, isAuthenticated } from "@/lib/auth";
+import { DEMO_IMPORT_LOCK_MESSAGE, isDemoMode } from "@/lib/demo";
 import { isValidQty, roundQty } from "@/lib/qty";
 
 export const dynamic = "force-dynamic";
@@ -97,6 +98,10 @@ function chunk<T>(arr: T[], size: number): T[][] {
 export async function POST(request: Request) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
+  }
+
+  if (isDemoMode()) {
+    return NextResponse.json({ error: DEMO_IMPORT_LOCK_MESSAGE }, { status: 403 });
   }
 
   let file: File | null = null;

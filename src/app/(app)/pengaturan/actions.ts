@@ -9,6 +9,7 @@ import {
   createSession,
   getSessionPayload,
 } from "@/lib/auth";
+import { DEMO_PIN_LOCK_MESSAGE, isDemoMode } from "@/lib/demo";
 
 async function findUser() {
   return prisma.user.findFirst({
@@ -42,6 +43,10 @@ export async function changePin(
   confirmPin: string
 ): Promise<{ success: true } | { success: false; error: string }> {
   await requireSession();
+
+  if (isDemoMode()) {
+    return { success: false, error: DEMO_PIN_LOCK_MESSAGE };
+  }
 
   if (!/^\d{6}$/.test(newPin)) {
     return { success: false, error: "PIN baru harus terdiri dari 6 angka." };
@@ -98,6 +103,10 @@ export async function setRecoveryPin(
   confirmPin: string
 ): Promise<{ success: true } | { success: false; error: string }> {
   await requireSession();
+
+  if (isDemoMode()) {
+    return { success: false, error: DEMO_PIN_LOCK_MESSAGE };
+  }
 
   if (!/^\d{6}$/.test(recoveryPin)) {
     return { success: false, error: "PIN cadangan harus terdiri dari 6 angka." };
